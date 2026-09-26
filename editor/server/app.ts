@@ -15,6 +15,7 @@ import {
 } from './render-rate-limit.js';
 import { readRequestBody } from './request-body.js';
 import { serveStatic } from './static.js';
+import { createImageStudioHandler } from './image-studio.js';
 
 // Compiled to dist-server/server/app.js; editor/dist/ (the Vite build) is a
 // sibling of dist-server/ one level up from there.
@@ -43,6 +44,7 @@ export function createRequestListener(options: AppOptions = {}): RequestListener
   const renderLimiter = createRenderRateLimiter(renderRateLimitBudget());
   const trustProxy = renderRateLimitTrustProxy();
   const renderJobs = new RenderJobStore();
+  let imageStudio: ReturnType<typeof createImageStudioHandler> | undefined;
   const enhanceJobs = new RenderJobStore<AIEnhanceRequest, AIEnhanceResult>(
     runReplicateEnhance,
     Date.now,
@@ -74,6 +76,20 @@ export function createRequestListener(options: AppOptions = {}): RequestListener
 
       if (pathname === '/api/health' && (req.method === 'GET' || req.method === 'HEAD')) {
         sendJson(res, 200, { ok: true });
+        return;
+      }
+
+      if (pathname === '/api/images' || pathname.startsWith('/api/images/')) {
+        if (pathname === '/api/images/jobs' && req.method === 'POST') {
+          const verdict = renderLimiter.take(renderRateLimitKey(req, trustProxy));
+          if (!verdict.allowed) {
+            res.setHeader('Retry-After', String(verdict.retryAfterSeconds));
+            sendJson(res, 429, { error: 'Render rate limit reached. Try again later.' });
+            return;
+          }
+        }
+        imageStudio ??= createImageStudioHandler();
+        await imageStudio(req, res, pathname);
         return;
       }
 

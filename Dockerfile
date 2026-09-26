@@ -29,8 +29,10 @@ FROM node:24-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=8080
+ENV IMAGE_STUDIO_DATA_DIR=/data/image-studio
 
 RUN addgroup -S metaball && adduser -S metaball -G metaball
+RUN mkdir -p /data/image-studio && chown -R metaball:metaball /data
 
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/package.json ./package.json

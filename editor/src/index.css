@@ -100,3 +100,28 @@ body {
     animation: none;
   }
 }
+
+/* Editorial style samples use the imagery palette; product controls retain
+   the existing semantic tokens. These are abstract swatches, not AI results. */
+.image-kicker {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+.image-label { display: block; margin-bottom: 8px; font-size: 12px; font-weight: 500; }
+.image-style-card { padding: 5px; border: 1px solid var(--border); border-radius: 10px; text-align: left; cursor: pointer; }
+.image-style-card.is-selected { border-color: var(--foreground); box-shadow: 0 0 0 1px var(--foreground); }
+.image-style-card:focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
+.image-style-swatch { position: relative; display: block; height: 65px; border-radius: 6px; overflow: hidden; }
+.image-style-hestia-field { background: var(--helios-hestia); }
+.image-style-hestia-field span { position: absolute; width: 50px; height: 90px; left: 24px; top: 15px; border-radius: 50% 50% 0 0; background: var(--foreground); transform: rotate(-28deg); box-shadow: -7px 0 18px var(--helios-eos); }
+.image-style-filter { background: var(--helios-aion); }
+.image-style-filter span { position: absolute; inset: 12px 19px -20px; border-radius: 50%; background: var(--helios-hestia); filter: blur(9px); box-shadow: 0 -8px 8px var(--helios-helios); }
+.image-style-close-ups { background: var(--foreground); }
+.image-style-close-ups span { position: absolute; width: 110px; height: 30px; top: 26px; left: -20px; transform: rotate(-35deg); border-radius: 100%; background: var(--helios-eos); box-shadow: 0 -5px 24px var(--helios-hestia); filter: blur(3px); }
+.image-stage { display: flex; min-height: 470px; align-items: center; justify-content: center; overflow: hidden; }
+.image-empty { width: 100%; }
+.image-colour-dot { width: 8px; height: 8px; border-radius: 100%; background: var(--image-field); }
+@media (max-width: 639px) { .image-stage { min-height: 340px; } }

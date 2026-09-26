@@ -254,6 +254,7 @@ export function buildAIMetamorphPrompt(params: AIRenderParams): string {
 MATERIAL IDENTITY
 ${params.materialDescription}
 The material\u2019s structures: ${params.structureDescription}. Every surface feature must read as THIS material \u2014 its real forms at their natural scale \u2014 never as generic organic texture.
+Make the object feel grown from this material, rather than wrapped in a flat image. Emphasize its tactile weight, roughness or softness and natural imperfections. Keep the material coherent across the whole form, including curved sides and recessed areas; obey the specified gloss and translucency instead of adding a generic shiny finish.
 
 Apply surface deformation at ${m.deformAmount}% intensity \u2014 at low intensity, keep the geometry close to the original with only fine surface-level texture; at high intensity, let the form itself warp, bulge, or fracture to match the structure of the reference material. ${growth} ${porosity} ${relief} Render the finish at ${m.glossiness}% gloss \u2014 0% is fully matte and light-absorbing like chalk or unglazed clay, 100% is a wet, mirror-bright specular sheen. Give the material ${m.translucency}% translucency \u2014 0% fully opaque, 100% light passing visibly through thinner areas with soft subsurface scattering, as in wax, jade or milk. Scale the material\u2019s pattern to ${m.patternScale}% \u2014 low values read as a few large motifs spanning the whole form, high values as fine, dense repetition. Fully replace the original surface with the material qualities shown in the reference: its texture pattern, color, reflectivity, and finish.
 
@@ -288,6 +289,7 @@ ${materialReference}
 MATERIAL DIRECTION
 ${params.materialDescription}
 Material influence: ${params.materialInfluence}/100. ${influenceInstruction(params.materialInfluence)}
+Make the surface feel intrinsic to the object, with tactile weight, roughness or softness and natural imperfections. Carry the same material coherently around curved sides and recessed areas. Preserve its characteristic finish instead of adding generic gloss.
 
 GEOMETRY CONSTRAINTS
 Shape fidelity: ${params.geometryFidelity}/100. ${fidelityInstruction(params.geometryFidelity)}

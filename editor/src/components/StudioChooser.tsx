@@ -1,5 +1,5 @@
 /**
- * The fork in the road: 2D mark work and 3D object work are different
+ * The fork in the road: 2D marks, 3D objects and image studies are different
  * deliverables with different toolsets, so choosing between them is a page,
  * not a toggle tucked into a toolbar corner. Deep links skip this page;
  * the switch inside either editor is a full navigation on purpose.
@@ -17,6 +17,12 @@ const PATHS = [
     title: 'Object',
     description: 'Sculpt the form, apply curated surface textures, metamorph and render with AI.',
   },
+  {
+    href: '/studio/images',
+    eyebrow: 'AI',
+    title: 'Images',
+    description: 'Make Hestia fields, atmospheric filters and intimate close-ups. Build your image library.',
+  },
 ] as const;
 
 export default function StudioChooser() {
@@ -28,7 +34,7 @@ export default function StudioChooser() {
         </p>
         <h1 className="mt-1 text-2xl font-semibold">Metaball Studio</h1>
       </header>
-      <div className="grid w-full max-w-2xl grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="grid w-full max-w-4xl grid-cols-1 gap-4 sm:grid-cols-3">
         {PATHS.map((path) => (
           <a
             key={path.href}
