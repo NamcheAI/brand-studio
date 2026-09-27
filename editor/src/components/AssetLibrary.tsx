@@ -9,7 +9,6 @@ type Page = { studies: ImageStudy[]; hasMore: boolean };
 const selectClass = 'rounded-full border bg-background px-3 py-2 text-xs';
 export default function AssetLibrary() {
   const [studio, setStudio] = useState(new URLSearchParams(location.search).get('studio') === 'object' ? 'object' : '');
-  const [status, setStatus] = useState('');
   const [theme, setTheme] = useState('');
   const [search, setSearch] = useState('');
   const [version, setVersion] = useState('');
@@ -23,7 +22,7 @@ export default function AssetLibrary() {
   const generation = useRef(0);
   const firstLoad = useRef(true);
   const desiredId = useRef(new URLSearchParams(location.search).get('asset'));
-  const query = new URLSearchParams({ studio, status, variant: theme, search, version }).toString();
+  const query = new URLSearchParams({ studio, status: 'rendered', variant: theme, search, version }).toString();
   useEffect(() => {
     const controller = new AbortController();
     const epoch = ++generation.current;
@@ -33,7 +32,14 @@ export default function AssetLibrary() {
         try {
           const page = await assetApi<Page>(`/api/images?${query}`, { signal: controller.signal });
           let initial = page.studies[0];
-          if (firstLoad.current && desiredId.current) initial = await getStudy(desiredId.current, controller.signal);
+          if (firstLoad.current && desiredId.current) {
+            const requested = await getStudy(desiredId.current, controller.signal);
+            if (requested.imageUrl || requested.status === 'running') initial = requested;
+            else if (requested.status === 'draft') {
+              const related = await assetApi<Page>(`/api/images?status=rendered&version=${requested.promptVersionId ?? requested.id}`, { signal: controller.signal });
+              initial = related.studies[0];
+            }
+          }
           if (controller.signal.aborted || epoch !== generation.current) return;
           firstLoad.current = false;
           setItems(page.studies); setHasMore(page.hasMore); setSelected(initial);
@@ -56,7 +62,11 @@ export default function AssetLibrary() {
       try {
         const updates = await Promise.all(runningIds.split(',').map(id => getStudy(id, controller.signal)));
         if (controller.signal.aborted) return;
-        setItems(previous => previous.map(item => updates.find(update => update.id === item.id) ?? item));
+        setItems(previous => {
+          const refreshed = previous.map(item => updates.find(update => update.id === item.id) ?? item);
+          const finished = updates.filter(update => update.imageUrl && !refreshed.some(item => item.id === update.id));
+          return [...finished, ...refreshed];
+        });
         setSelected(previous => updates.find(update => update.id === previous?.id) ?? previous);
       } catch (err) { if (!controller.signal.aborted) setError(err instanceof Error ? err.message : 'Could not refresh jobs.'); }
       if (!controller.signal.aborted) timer = setTimeout(poll, 2500);
@@ -80,7 +90,7 @@ export default function AssetLibrary() {
     try {
       const study = await repeatStudy(selected.id);
       desiredId.current = study.id; firstLoad.current = true;
-      setStatus(''); setRevision(value => value + 1);
+      setRevision(value => value + 1);
     } catch (err) { setError(err instanceof Error ? err.message : 'Could not start generation.'); }
     finally { setBusy(false); }
   }
@@ -93,7 +103,6 @@ export default function AssetLibrary() {
     <div className="flex flex-wrap items-center gap-3 border-b px-5 py-4 sm:px-8">
       <select aria-label="Filter studio" className={selectClass} value={studio} onChange={event => { setStudio(event.target.value); setTheme(''); }}><option value="">All studios</option><option value="images">Images</option><option value="object">3D Metaball</option></select>
       <select aria-label="Filter theme" className={selectClass} disabled={studio === 'object'} value={theme} onChange={event => setTheme(event.target.value)}><option value="">All themes</option>{Object.entries(imageStyles).map(([key, style]) => <option key={key} value={key}>{style.name}</option>)}</select>
-      <select aria-label="Filter status" className={selectClass} value={status} onChange={event => setStatus(event.target.value)}><option value="">Images & prompt versions</option><option value="done">Finished images</option><option value="draft">Prompt versions</option><option value="running">Generating</option><option value="error">Failed</option></select>
       <input aria-label="Search prompts" placeholder="Search prompts…" className={selectClass + ' min-w-0 flex-1'} value={search} onChange={event => setSearch(event.target.value)} />
       {version && <button className="text-xs underline" onClick={() => setVersion('')}>Clear version filter ×</button>}
     </div>
@@ -105,7 +114,7 @@ export default function AssetLibrary() {
           <div className="flex aspect-[16/10] items-center justify-center bg-muted">{item.imageUrl ? <img src={item.imageUrl} alt={item.scene} loading="lazy" className="size-full object-cover" /> : <span className="image-kicker">{item.status === 'draft' ? 'Prompt version' : item.status}</span>}</div>
           <div className="p-3"><p className="line-clamp-2 text-xs">{item.scene}</p><p className="mt-2 font-mono text-[9px] text-muted-foreground">{studyLabel(item)} · {new Date(item.createdAt).toLocaleDateString()}</p></div>
         </button>)}</div>
-        {!items.length && <p className="py-8 text-sm text-muted-foreground">{loading ? 'Loading…' : 'No matching assets. Save a prompt version or generate an image in a studio.'}</p>}
+        {!items.length && <p className="py-8 text-sm text-muted-foreground">{loading ? 'Loading…' : 'No matching images. Generate an image in a studio to start your library.'}</p>}
         {hasMore && <Button className="mt-4 w-full" variant="outline" disabled={loading} onClick={() => void more()}>Load older entries</Button>}
       </aside>
       {selected && <section className="min-w-0 p-5 sm:p-8">
@@ -120,7 +129,6 @@ export default function AssetLibrary() {
             {selected.assistant && <div className="rounded-lg border p-3 text-xs"><p className="font-medium">Prompt iteration</p><p className="mt-2">{selected.assistant.instruction}</p><p className="mt-2 text-muted-foreground">{selected.assistant.explanation}</p></div>}
             <a className="block text-sm underline underline-offset-4" href={`/studio/${selected.object ? 'object' : 'images'}?asset=${selected.id}`}>Open settings in {selected.object ? '3D' : 'image'} studio →</a>
             <button className="block text-xs underline" onClick={() => setVersion(selected.promptVersionId ?? selected.id)}>Browse images from this prompt version</button>
-            {selected.parentId && <a className="block text-xs underline" href={libraryUrl(selected.parentId)}>View previous version →</a>}
             <details className="border-t pt-4 text-xs"><summary className="cursor-pointer">Exact generation prompt & settings</summary><p className="mt-3 whitespace-pre-wrap leading-relaxed">{selected.prompt}</p><pre className="mt-4 max-h-80 overflow-auto whitespace-pre-wrap break-all rounded border p-3">{JSON.stringify(selected.object?.params ?? { size: selected.size, quality: selected.quality, model: selected.model }, null, 2)}</pre></details>
           </div>
         </div>

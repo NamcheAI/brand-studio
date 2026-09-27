@@ -51,7 +51,7 @@ export class ImageStudyStore {
     const all = [...this.entries.values()].filter((record) => record.owner === owner).map((record) => record.study).filter(study =>
       (!filters.studio || (filters.studio === 'object' ? Boolean(study.object) : !study.object)) &&
       (!filters.variant || (!study.object && study.variant === filters.variant)) &&
-      (!filters.status || (filters.status === 'images' ? study.status !== 'draft' : study.status === filters.status)) &&
+      (!filters.status || (filters.status === 'rendered' ? Boolean(study.imageUrl) : filters.status === 'images' ? study.status !== 'draft' : study.status === filters.status)) &&
       (!filters.version || (study.promptVersionId ?? study.id) === filters.version) &&
       (!filters.search || `${study.scene} ${study.style} ${study.prompt}`.toLowerCase().includes(filters.search.toLowerCase()))
     ).sort((a, b) => b.createdAt.localeCompare(a.createdAt) || b.id.localeCompare(a.id));

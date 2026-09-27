@@ -248,9 +248,14 @@ test('filters run before pagination and legacy image records remain browsable', 
   const store = new ImageStudyStore(dir); await store.ready;
   const owner = 'a'.repeat(64);
   try {
-    for (let i = 0; i < 65; i++) await store.save({ owner, study: { ...request, variant: i % 2 ? 'filter' : 'hestia-field', id: randomUUID(), createdAt: new Date(i * 1000).toISOString(), status: i % 2 ? 'draft' : 'done', prompt: 'legacy prompt', scene: `Motif ${i}` } });
+    for (let i = 0; i < 65; i++) await store.save({ owner, study: { ...request, variant: i % 2 ? 'filter' : 'hestia-field', id: randomUUID(), createdAt: new Date(i * 1000).toISOString(), status: i % 2 ? 'draft' : 'done', ...(i % 2 ? {} : { imageUrl: '/saved-image.png' }), prompt: 'legacy prompt', scene: `Motif ${i}` } });
     const page = store.list(owner, 0, { variant: 'hestia-field', status: 'done' });
     assert.equal(page.studies.length, 30); assert.equal(page.hasMore, true);
+    const rendered = store.list(owner, 0, { status: 'rendered' });
+    assert.equal(rendered.studies.length, 30);
+    assert.equal(rendered.hasMore, true);
+    assert.ok(rendered.studies.every(study => study.imageUrl));
+    assert.equal(store.list(owner, 30, { status: 'rendered' }).studies.length, 3);
     const last = store.list(owner, 30, { variant: 'hestia-field', status: 'done' });
     assert.equal(last.studies.length, 3); assert.equal(last.hasMore, false);
     assert.ok(page.studies.every(study => !last.studies.some(other => study.id === other.id)));
