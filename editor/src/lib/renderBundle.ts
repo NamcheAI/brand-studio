@@ -14,9 +14,9 @@ import type { Document } from './model';
  * traceable), and the metaball document itself, which the Studio can import
  * to rebuild the shape.
  *
- * The editor is public and unauthenticated, so nothing here writes to a
- * server: the bundle is produced client-side and filed into NamcheAI/imagery
- * with `just import-render`.
+ * Legacy client-side bundle exporter, retained for standalone results. New
+ * Studio generations download bundles from the private asset library so the
+ * parameters and Document always come from the saved render snapshot.
  */
 
 export const RENDER_BUNDLE_SCHEMA_VERSION = 1;

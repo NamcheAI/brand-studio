@@ -48,6 +48,7 @@ function localAIRenderApi(options: {
   dataDir?: string
 }): Plugin {
   let imageStudio: ReturnType<typeof createImageStudioHandler> | undefined
+  const draftLimiter = createRenderRateLimiter(120)
   const imageLimiter = createRenderRateLimiter(renderRateLimitBudget())
   const jobStore = new RenderJobStore((request) =>
     runRender(request, { apiKey: options.apiKey, model: options.model }),
@@ -63,15 +64,15 @@ function localAIRenderApi(options: {
       server.middlewares.use(async (request: IncomingMessage, response: ServerResponse, next) => {
         const pathname = new URL(request.url ?? '/', 'http://localhost').pathname
         if (pathname !== '/api/images' && !pathname.startsWith('/api/images/')) { next(); return }
-        if (pathname === '/api/images/jobs' && request.method === 'POST') {
-          const verdict = imageLimiter.take(renderRateLimitKey(request, false))
+        if (pathname.startsWith('/api/images/') && request.method === 'POST') {
+          const verdict = (pathname === '/api/images/drafts' ? draftLimiter : imageLimiter).take(renderRateLimitKey(request, false))
           if (!verdict.allowed) {
             response.setHeader('Retry-After', String(verdict.retryAfterSeconds))
             sendJson(response, 429, { error: 'Render rate limit reached. Try again later.' })
             return
           }
         }
-        imageStudio ??= createImageStudioHandler({ apiKey: options.apiKey, model: options.model, dataDir: options.dataDir })
+        imageStudio ??= createImageStudioHandler({ apiKey: options.apiKey, model: options.model, dataDir: options.dataDir, suggestModel: options.suggestModel, replicateToken: options.replicateToken })
         await imageStudio(request, response, pathname)
       })
       server.middlewares.use('/api/enhance', async (request: IncomingMessage, response: ServerResponse) => {

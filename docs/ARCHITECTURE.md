@@ -40,7 +40,10 @@ GLB/PNG/SVG/JSON export and Blender handoff. `Metaball3DPreview` is an adapter:
 The separate `/studio/images` entry point creates Hestia field, Filter and
 Close-up image studies. Its provider and durable, browser-private history live
 in `editor/lib/` and `editor/server/`; image studies are independent of the
-Metaball `Document`. See [`IMAGE_STUDIO.md`](IMAGE_STUDIO.md).
+Metaball `Document`. The shared `/studio/library` pairs immutable prompt versions
+with image and 3D render outputs. 3D assets contain a serialized Document and
+camera/reference captures, while core and the public renderer remain unaware of
+storage. See [`IMAGE_STUDIO.md`](IMAGE_STUDIO.md).
 
 High-fidelity AI material rendering is deliberately a Studio workflow, not a
 browser renderer feature. The browser captures the current 3D canvas and may

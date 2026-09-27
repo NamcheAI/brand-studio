@@ -4,9 +4,9 @@ import { resolve, join } from 'node:path';
 import type { ImageStudy } from './image-studio-contract.js';
 import { AIRenderError } from './openai-image-render.js';
 
-type StoredStudy = { owner: string; study: ImageStudy; referenceMime?: string };
+type StoredStudy = { owner: string; study: ImageStudy; referenceMime?: string; shapeMime?: string };
 const QUOTA = 1024 * 1024 * 1024;
-export const JOB_RESERVATION = 37 * 1024 * 1024;
+export const JOB_RESERVATION = 42 * 1024 * 1024;
 export class ImageStudyStore {
   readonly directory: string;
   private entries = new Map<string, StoredStudy>();
@@ -47,12 +47,18 @@ export class ImageStudyStore {
     const record = this.entries.get(id);
     return record?.owner === owner ? record : undefined;
   }
-  list(owner: string, offset: number) {
-    const all = [...this.entries.values()].filter((record) => record.owner === owner).map((record) => record.study).sort((a, b) => b.createdAt.localeCompare(a.createdAt) || b.id.localeCompare(a.id));
+  list(owner: string, offset: number, filters: { studio?: string; variant?: string; status?: string; search?: string; version?: string } = {}) {
+    const all = [...this.entries.values()].filter((record) => record.owner === owner).map((record) => record.study).filter(study =>
+      (!filters.studio || (filters.studio === 'object' ? Boolean(study.object) : !study.object)) &&
+      (!filters.variant || (!study.object && study.variant === filters.variant)) &&
+      (!filters.status || (filters.status === 'images' ? study.status !== 'draft' : study.status === filters.status)) &&
+      (!filters.version || (study.promptVersionId ?? study.id) === filters.version) &&
+      (!filters.search || `${study.scene} ${study.style} ${study.prompt}`.toLowerCase().includes(filters.search.toLowerCase()))
+    ).sort((a, b) => b.createdAt.localeCompare(a.createdAt) || b.id.localeCompare(a.id));
     return { studies: all.slice(offset, offset + 30), hasMore: all.length > offset + 30 };
   }
-  async media(id: string, kind: 'image' | 'reference') { return readFile(join(this.directory, `${id}.${kind}`)); }
-  async saveMedia(id: string, kind: 'image' | 'reference', bytes: Uint8Array) { await this.atomic(`${id}.${kind}`, bytes); }
+  async media(id: string, kind: 'image' | 'reference' | 'shape') { return readFile(join(this.directory, `${id}.${kind}`)); }
+  async saveMedia(id: string, kind: 'image' | 'reference' | 'shape', bytes: Uint8Array) { await this.atomic(`${id}.${kind}`, bytes); }
   private async atomic(name: string, content: string | Uint8Array) {
     const path = join(this.directory, name);
     const oldSize = await stat(path).then((info) => info.size, () => 0);

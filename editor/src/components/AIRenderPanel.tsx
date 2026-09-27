@@ -1,4 +1,7 @@
-import { useState } from 'react';
+import { PromptAssistant } from './PromptAssistant';
+import { libraryUrl } from '../lib/asset-api';
+import type { ImageStudy } from '../../lib/image-studio-contract';
+import { useEffect, useState } from 'react';
 
 import { Hint, SelectField, SwitchField } from './toolbar/fields';
 import { SliderField } from './toolbar/slider-field';
@@ -8,6 +11,7 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import {
+  buildAIRenderPrompt,
   AI_ENHANCE_SCALES,
   DEFAULT_AI_ENHANCE,
   type AIEnhanceScale,
@@ -23,6 +27,12 @@ import {
 import { downloadAIRender, enhanceAIRender } from '../lib/aiRender';
 
 type Props = {
+  restoredRender?: { id: string; params: AIRenderParams };
+  onApplyPrompt: (study: ImageStudy) => void;
+  onSavePrompt: (params: AIRenderParams) => Promise<ImageStudy>;
+  sceneLighting: string;
+  sceneBackground: string;
+  sceneCanvas: AIRenderParams['background'];
   canRender: boolean;
   referenceName: string | null;
   textureSlug: string | null;
@@ -56,6 +66,7 @@ const METAMORPH_SLIDERS: Array<{ key: keyof AIMetamorphParams; label: string }> 
 ];
 
 export default function AIRenderPanel({
+  restoredRender, onSavePrompt, onApplyPrompt, sceneLighting, sceneBackground, sceneCanvas,
   canRender,
   referenceName,
   textureSlug,
@@ -66,6 +77,7 @@ export default function AIRenderPanel({
   onExportBundle,
 }: Props) {
   const [params, setParams] = useState<AIRenderParams>(DEFAULT_AI_RENDER_PARAMS);
+  useEffect(() => { if (restoredRender) setParams(restoredRender.params); }, [restoredRender]);
   const [status, setStatus] = useState<'idle' | 'rendering' | 'done' | 'error'>('idle');
   const [suggesting, setSuggesting] = useState(false);
   const [enhancing, setEnhancing] = useState(false);
@@ -87,12 +99,12 @@ export default function AIRenderPanel({
     setEnhancing(true);
     setError(null);
     try {
-      const enhanced = await enhanceAIRender({ image: result.image, ...enhance });
+      const enhanced = await enhanceAIRender({ image: result.image, ...enhance }, result.assetId);
       // The enhanced image replaces the card; prompt and request id stay from
       // the composing render, the model label records both stages.
       setResult((current) =>
         current
-          ? { ...current, image: enhanced.image, model: `${current.model} + ${enhanced.model}` }
+          ? { ...current, image: enhanced.image, assetId: enhanced.assetId, model: `${current.model} + ${enhanced.model}` }
           : current,
       );
     } catch (enhanceError) {
@@ -201,6 +213,9 @@ export default function AIRenderPanel({
         />
       </div>
 
+      <PromptAssistant disabled={!canRender || status === 'rendering'} onSnapshot={() => onSavePrompt(params)} onApply={study => { if (study.object) { setParams(study.object.params); onApplyPrompt(study); } }} />
+      <details className="rounded border p-3 text-xs"><summary className="cursor-pointer">Scenic direction & full generation prompt</summary><p className="mt-3 whitespace-pre-wrap leading-relaxed">{buildAIRenderPrompt({ ...params, lightingDescription: sceneLighting, backgroundDescription: sceneBackground, background: sceneCanvas }, Boolean(referenceName || (params.metamorph && textureSlug)))}</p><p className="mt-3 text-muted-foreground">Lighting and background are edited in Scene.</p></details>
+      <a href="/studio/library?studio=object" className="text-xs underline underline-offset-4">Browse saved Metaball combinations →</a>
       <SliderField
         label="Shape fidelity"
         value={params.geometryFidelity}
@@ -272,6 +287,7 @@ export default function AIRenderPanel({
 
       {result && (
         <Card size="sm" className="gap-0 py-0">
+          {result.assetId && <a className="p-3 text-xs underline" href={libraryUrl(result.assetId)}>Open saved prompt + image →</a>}
           <CardContent className="px-0">
             <img
               src={result.image}
@@ -286,11 +302,9 @@ export default function AIRenderPanel({
               </span>
               <div className="flex gap-2">
                 <Button variant="outline" size="xs" onClick={() => downloadAIRender(result)}>
-                  PNG
+                  Image
                 </Button>
-                <Button variant="outline" size="xs" onClick={() => onExportBundle(result, params)}>
-                  Bundle
-                </Button>
+                {result.assetId ? <Button nativeButton={false} variant="outline" size="xs" render={<a href={`/api/images/${result.assetId}/bundle`} download />}>Bundle</Button> : <Button variant="outline" size="xs" onClick={() => onExportBundle(result, params)}>Bundle</Button>}
               </div>
             </div>
             {/* Compose small, then re-synthesize micro-detail at scale — the

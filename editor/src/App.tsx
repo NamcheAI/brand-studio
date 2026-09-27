@@ -1,3 +1,6 @@
+import { serializeDocument } from './lib/persistence';
+import { getStudy } from './lib/asset-api';
+import type { ImageStudy } from '../lib/image-studio-contract';
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Loader2Icon } from 'lucide-react';
 import { toast } from 'sonner';
@@ -57,7 +60,7 @@ import { downloadJson, initialDocument, parseDocumentJson, saveDocument } from '
 import type { MarchingCubes } from 'three/examples/jsm/objects/MarchingCubes.js';
 import { getLiveMarchingCubes, type Canvas3DHandle } from './lib/canvas3dHandle';
 import type { RefImageBytes } from './lib/exportBlenderHandoff';
-import { fetchTextureReference, renderAIMaterial, suggestMetamorphParams } from './lib/aiRender';
+import { captureShapeDataUrl, fetchTextureReference, renderAIMaterial, saveMaterialStudy, suggestMetamorphParams } from './lib/aiRender';
 import { isTextureSlug, textureWebUrl } from './lib/texturePresets';
 import { exportRenderBundle } from './lib/renderBundle';
 import { DEFAULT_AI_RENDER_PARAMS } from '../lib/ai-render-contract';
@@ -114,6 +117,38 @@ export default function App({ initialView = '2d' }: { initialView?: ViewMode } =
   const [sceneCanvas, setSceneCanvas] = useState<AIRenderParams['background']>(
     DEFAULT_AI_RENDER_PARAMS.background,
   );
+  const [restoredRender, setRestoredRender] = useState<{ id: string; params: AIRenderParams }>();
+  const [assetParentId, setAssetParentId] = useState<string>();
+  const [restoredTexture, setRestoredTexture] = useState<{ slug: string | null; reference: RefImageBytes }>();
+  useEffect(() => {
+    const id = new URLSearchParams(location.search).get('asset');
+    if (!id || initialView !== '3d') return;
+    const controller = new AbortController();
+    void (async () => {
+      try {
+        const study = await getStudy(id, controller.signal);
+        if (!study.object) throw new Error('This asset belongs in the image studio.');
+        const restored = parseDocumentJson(study.object.document);
+        let reference: RefImageBytes | null = null;
+        if (study.referenceUrl) {
+          const response = await fetch(study.referenceUrl, { signal: controller.signal });
+          if (!response.ok) throw new Error('Saved material reference is unavailable.');
+          reference = { bytes: new Uint8Array(await response.arrayBuffer()), fileName: 'Saved material reference' };
+        }
+        if (controller.signal.aborted) return;
+        setHistory(createHistory(restored));
+        setRestoredRender({ id, params: study.object.params });
+        setAssetParentId(id);
+        setSceneLighting(study.object.params.lightingDescription);
+        setSceneBackground(study.object.params.backgroundDescription);
+        setSceneCanvas(study.object.params.background);
+        setCustomRefImage(reference);
+        if (reference) setRestoredTexture({ slug: restored.textureSlug, reference });
+        toast.info('Saved settings loaded. The library retains the original camera capture; the editable preview starts with its default camera.');
+      } catch (error) { if (!controller.signal.aborted) toast.error(error instanceof Error ? error.message : 'Could not restore asset.'); }
+    })();
+    return () => controller.abort();
+  }, [initialView]);
   const [growing, setGrowing] = useState(false);
   const [growthElapsed, setGrowthElapsed] = useState(0);
   const [activeMotion, setActiveMotion] = useState<LoopMotionId | null>(null);
@@ -549,7 +584,7 @@ export default function App({ initialView = '2d' }: { initialView?: ViewMode } =
     });
   };
 
-  const doAIRender = async (params: AIRenderParams): Promise<AIRenderResult> => {
+  const materialStudyOptions = async (params: AIRenderParams) => {
     stopGrowth();
     stopMotion();
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
@@ -566,19 +601,29 @@ export default function App({ initialView = '2d' }: { initialView?: ViewMode } =
       throw new Error('The 3D canvas is not ready yet — wait a moment and try again.');
     }
 
+    // Capture before any asynchronous reference download; subsequent editor changes
+    // must not alter the image paired with this document and prompt snapshot.
+    const shapeImage = captureShapeDataUrl(canvas);
+    const savedDocument = serializeDocument(doc);
+
     // In metamorph mode the selected surface texture IS the material
     // reference — exactly the pattern picked in the dialog above, streamed
     // from the imagery CDN; a manually attached image only applies to the
     // classic material-study prompt.
     let materialReference = customRefImage;
-    if (params.metamorph && isTextureSlug(doc.textureSlug)) {
+    if (params.metamorph && restoredTexture?.slug === doc.textureSlug) {
+      materialReference = restoredTexture.reference;
+    } else if (params.metamorph && isTextureSlug(doc.textureSlug)) {
       materialReference = await fetchTextureReference(
         textureWebUrl(doc.textureSlug),
         `${doc.textureSlug}.webp`,
       );
     }
 
-    return renderAIMaterial({
+    return {
+      shapeImage,
+      document: savedDocument,
+      parentId: assetParentId,
       canvas,
       params: {
         ...params,
@@ -588,7 +633,13 @@ export default function App({ initialView = '2d' }: { initialView?: ViewMode } =
       },
       materialReference,
       invalidate: handle?.invalidate,
-    });
+    };
+  };
+  const doAIRender = async (params: AIRenderParams): Promise<AIRenderResult> => renderAIMaterial(await materialStudyOptions(params));
+  const doSaveAIPrompt = async (params: AIRenderParams): Promise<ImageStudy> => {
+    const study = await saveMaterialStudy(await materialStudyOptions(params));
+    setAssetParentId(study.id);
+    return study;
   };
 
   const doSuggestMetamorph = async () => {
@@ -1004,6 +1055,15 @@ export default function App({ initialView = '2d' }: { initialView?: ViewMode } =
           onExportBlenderHandoff={doExportBlenderHandoff}
           canAIRender={view === '3d'}
           onAIRender={doAIRender}
+          restoredRender={restoredRender}
+          onSaveAIPrompt={doSaveAIPrompt}
+          onApplyAIPrompt={study => {
+            if (!study.object) return;
+            setAssetParentId(study.id);
+            setSceneLighting(study.object.params.lightingDescription);
+            setSceneBackground(study.object.params.backgroundDescription);
+            setSceneCanvas(study.object.params.background);
+          }}
           onSuggestMetamorph={doSuggestMetamorph}
           sceneLighting={sceneLighting}
           onSceneLightingChange={setSceneLighting}
@@ -1027,7 +1087,7 @@ export default function App({ initialView = '2d' }: { initialView?: ViewMode } =
           }
           refImageName={customRefImage?.fileName ?? null}
           onAttachRefImageClick={() => refImageInputRef.current?.click()}
-          onClearRefImage={() => setCustomRefImage(null)}
+          onClearRefImage={() => { setCustomRefImage(null); setRestoredTexture(undefined); }}
           onImportJsonClick={() => importRef.current?.click()}
           radiusMin={RADIUS_MIN}
           radiusMax={RADIUS_MAX}

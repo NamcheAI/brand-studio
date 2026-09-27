@@ -11,11 +11,13 @@ import StudioChooser from './components/StudioChooser.tsx'
    chooser never download the editor. The legacy `/studio` deep link lands
    on the chooser. */
 const Studio = lazy(() => import('./App.tsx'))
+const AssetLibrary = lazy(() => import('./components/AssetLibrary.tsx'))
 const ImageStudio = lazy(() => import('./components/ImageStudio.tsx'))
 
 export default function Root() {
   const pathname = window.location.pathname
   if (pathname === '/' || pathname === '/index.html') return <Intro />
+  if (pathname.startsWith('/studio/library')) return <Suspense fallback={null}><AssetLibrary /></Suspense>
   if (pathname === '/studio/images' || pathname === '/studio/images/') {
     return <Suspense fallback={null}><ImageStudio /></Suspense>
   }

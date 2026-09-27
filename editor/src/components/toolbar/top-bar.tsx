@@ -96,14 +96,15 @@ export function TopBar({
           variant="ghost"
           size="xs"
           className="text-muted-foreground"
-          render={<a href={view === '2d' ? '/studio/object' : '/studio/mark'} />}
+          nativeButton={false} render={<a href={view === '2d' ? '/studio/object' : '/studio/mark'} />}
         >
           {view === '2d' ? '\u21c4 3D object' : '\u21c4 2D mark'}
         </Button>
-        <Button variant="ghost" size="xs" className="text-muted-foreground" render={<a href="/studio/images" />}>
+        <Button variant="ghost" size="xs" className="text-muted-foreground" nativeButton={false} render={<a href="/studio/images" />}>
           Images
         </Button>
 
+        <Button nativeButton={false} variant="ghost" size="xs" render={<a href="/studio/library" />}>Library</Button>
         {view === '2d' && (
           <Segmented
             label="2D canvas mode"

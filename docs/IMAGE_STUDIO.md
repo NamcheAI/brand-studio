@@ -70,3 +70,65 @@ and coherent surfaces around curved and recessed areas. Studio lighting and
 geometry remain authoritative. Meshy reconstruction is not part of this change;
 AI material studies remain images of the canonical browser geometry. Existing
 Weave outputs are not imported into the new library automatically.
+
+## Asset library and prompt workshop
+
+`/studio/library` browses image studies and 3D Metaball material studies together.
+Filter by studio, theme, status or prompt text; step through combinations; inspect
+content/scenic prompts, exact provider prompt, references and render parameters.
+The filters run on the server before pagination. Every entry has a direct link.
+
+A **prompt version** is an immutable `draft` record. Saving it requires no provider
+credentials and makes no paid call. Generation creates a separate `running` record
+linked by `promptVersionId`, which becomes `done` or `error`. Repeating it uses the
+saved prompts and reference bytes, never the current editor controls or a CDN's
+latest image. Editing and saving starts a new version linked by `parentId`.
+The image and 3D studios save a version before launching the paid image job.
+
+The prompt workshop saves the input version, then calls the existing server-only
+Responses API configuration (`OPENAI_SUGGEST_MODEL`, default `gpt-5-mini`). It uses
+[structured output](https://developers.openai.com/api/docs/guides/structured-outputs)
+to propose content plus an explanation. Scenic direction stays fixed. The result
+is another saved draft, with its instruction, previous content and explanation;
+it only enters the editor when the user chooses **Use this version**. Neither
+prompt suggestions nor viewing the library triggers image generation.
+
+3D entries also store the versioned Studio document, actual shape/camera capture,
+material reference and normalized render parameters. Opening in the 3D editor
+restores geometry, look, scene and render settings; the interactive camera starts
+at its default pose. **Generate again** in the library uses the exact saved camera
+capture. Detail enhancements are separate assets linked to their source image and
+retain enhancement settings. Earlier ephemeral `/api/render/jobs` outputs cannot
+be recovered retrospectively.
+
+**Download bundle** returns a ZIP containing `asset.json`, `prompt.txt`,
+`content-prompt.txt`, `scenic-prompt.txt`, available output/reference images, and
+(for 3D) `document.json` and the shape capture. The bundle is built from the saved
+record, not potentially changed editor state. No owner token/hash is included.
+The library remains browser-private, using the same existing cookie and volume.
+
+### Transport contract (independent of the implementation language)
+
+All routes below keep the existing `/api/images` cookie scope. GET routes require
+ownership; POST routes reject cross-site origins. JSON errors have `{ error }`.
+
+| Route | Result |
+| --- | --- |
+| `GET /api/images?studio=&variant=&status=&search=&version=&offset=` | `{ studies, hasMore }`, 30 matching records; `studio=images` or `object`, `status=draft`, `running`, `done`, `error`, or `images` (non-drafts) |
+| `POST /api/images/drafts` | 201 immutable version; image request or `{kind:"object",params,document,shapeImage,materialImage?,parentId?}` |
+| `POST /api/images/assist` | 201 proposed version; `{sourceId,instruction}` |
+| `POST /api/images/repeat` | 202 durable generation; `{sourceId}` |
+| `POST /api/images/enhance` | 202 durable enhancement; `{sourceId,scaleFactor,creativity,resemblance}` |
+| `GET /api/images/jobs/:id` | Saved version or current job state |
+| `GET /api/images/:id/{image,reference,shape,bundle}` | Owner-private media or ZIP |
+
+Legacy direct `POST /api/images/jobs` remains supported. `POST
+/api/images/object-jobs` accepts a 3D request directly. New records carry
+`schemaVersion:2`; missing version/object fields identify existing image records,
+which remain readable without rewriting media. The Metaball Document schema is
+unchanged. A Rust backend can implement this contract against the same files and
+owner hashes without changing the UI or losing old assets.
+
+Paid calls share the render budget; non-paid draft saves have a separate
+120-per-client-per-hour limit. Generation reserves 42 MiB per active slot for the
+output, two references and metadata. Provider credentials stay server-only.
