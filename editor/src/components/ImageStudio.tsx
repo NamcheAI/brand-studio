@@ -22,6 +22,7 @@ export default function ImageStudio() {
   const [quality, setQuality] = useState<AIRenderQuality>('high');
   const [reference, setReference] = useState<string>();
   const [referenceName, setReferenceName] = useState('');
+  const [referenceLoading, setReferenceLoading] = useState(false);
   const [studies, setStudies] = useState<ImageStudy[]>([]);
   const [selected, setSelected] = useState<ImageStudy | null>(null);
   const [loading, setLoading] = useState(true);
@@ -72,14 +73,15 @@ export default function ImageStudio() {
     setDrafts(previous => ({ ...previous, [variant]: { ...previous[variant], ...patch } }));
   }
 
-  async function loadReference(file?: File) {
-    const sequence = ++uploadSequence.current;
+  async function loadReference(file?: File, sequence = ++uploadSequence.current) {
     if (!file) return;
     setError('');
+    setReferenceLoading(false);
     if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type) || file.size > 4 * 1024 * 1024) {
       setError('Choose a PNG, JPEG or WebP image up to 4 MB.');
       return;
     }
+    setReferenceLoading(true);
     try {
       const data = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
@@ -88,11 +90,12 @@ export default function ImageStudio() {
         reader.readAsDataURL(file);
       });
       if (alive.current && sequence === uploadSequence.current) { setReference(data); setReferenceName(file.name); }
-    } catch (err) { if (alive.current) setError(String(err)); }
+    } catch (err) { if (alive.current && sequence === uploadSequence.current) setError(String(err)); }
+    finally { if (alive.current && sequence === uploadSequence.current) setReferenceLoading(false); }
   }
 
   async function generate() {
-    if (submitting || running) return;
+    if (submitting || running || referenceLoading) return;
     setSubmitting(true);
     setError('');
     try {
@@ -112,14 +115,17 @@ export default function ImageStudio() {
     setQuality(study.quality);
     setReference(undefined);
     setReferenceName('');
-    ++uploadSequence.current;
+    const sequence = ++uploadSequence.current;
+    setReferenceLoading(Boolean(study.referenceUrl));
     if (study.referenceUrl) {
       try {
         const response = await fetch(study.referenceUrl);
         if (!response.ok) throw new Error('The saved reference could not be loaded.');
         const blob = await response.blob();
-        await loadReference(new File([blob], 'Saved reference', { type: blob.type }));
-      } catch (err) { setError(err instanceof Error ? err.message : 'Reference unavailable.'); }
+        if (!alive.current || sequence !== uploadSequence.current) return;
+        await loadReference(new File([blob], 'Saved reference', { type: blob.type }), sequence);
+      } catch (err) { if (alive.current && sequence === uploadSequence.current) setError(err instanceof Error ? err.message : 'Reference unavailable.'); }
+      finally { if (alive.current && sequence === uploadSequence.current) setReferenceLoading(false); }
     }
   }
 
@@ -167,7 +173,7 @@ export default function ImageStudio() {
           </div>
           <details className="rounded-lg border px-3 py-3"><summary className="cursor-pointer text-xs">Style prompt <span className="text-muted-foreground">/ editable</span></summary><label className="mt-3 block"><span className="sr-only">Style prompt</span><textarea required maxLength={6000} rows={8} className={fieldClass + ' resize-y text-xs leading-relaxed'} value={draft.style} onChange={event => patchDraft({ style: event.target.value })} /></label><button type="button" className="mt-2 text-xs underline underline-offset-4" onClick={() => patchDraft({ style: imageStyles[variant].style })}>Reset style</button></details>
           <div className="grid grid-cols-2 gap-3"><label><span className="image-label">Format</span><select className={fieldClass} value={size} onChange={event => setSize(event.target.value as AIRenderSize)}>{AI_RENDER_SIZES.map(value => <option key={value} value={value}>{value.replace('x', ' × ')}</option>)}</select></label><label><span className="image-label">Quality</span><select className={fieldClass} value={quality} onChange={event => setQuality(event.target.value as AIRenderQuality)}><option value="low">Draft</option><option value="medium">Standard</option><option value="high">High</option></select></label></div>
-          <Button type="submit" className="h-12 w-full" disabled={loading || submitting || running || !draft.scene.trim() || !draft.style.trim()}>{submitting || running ? <Loader2Icon className="animate-spin" /> : <SparklesIcon />}{submitting ? 'Starting…' : running ? 'Creating your image…' : 'Generate image'}<span className="ml-auto"><ArrowUpRightIcon className="size-4" /></span></Button>
+          <Button type="submit" className="h-12 w-full" disabled={loading || referenceLoading || submitting || running || !draft.scene.trim() || !draft.style.trim()}>{submitting || running || referenceLoading ? <Loader2Icon className="animate-spin" /> : <SparklesIcon />}{referenceLoading ? 'Loading reference…' : submitting ? 'Starting…' : running ? 'Creating your image…' : 'Generate image'}<span className="ml-auto"><ArrowUpRightIcon className="size-4" /></span></Button>
           <p className="text-center font-mono text-[10px] text-muted-foreground">GPT Image 2.5 · Saved to your history</p>
         </form>
       </aside>
