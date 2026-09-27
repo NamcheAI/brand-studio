@@ -12,6 +12,7 @@ import { runReplicateEnhance } from './lib/replicate-enhance.js'
 import type { AIEnhanceRequest, AIEnhanceResult } from './lib/ai-render-contract.js'
 import { runOpenAIImageRender as runRender } from './lib/openai-image-render.js'
 import { createImageStudioHandler } from './server/image-studio.js'
+import { imageStorageDeny } from './server/image-storage-deny.js'
 import { createRenderRateLimiter, renderRateLimitBudget, renderRateLimitKey } from './server/render-rate-limit.js'
 
 const DEV_RENDER_BODY_LIMIT = 12 * 1024 * 1024
@@ -143,6 +144,7 @@ function localAIRenderApi(options: {
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   return {
+    server: { fs: { deny: imageStorageDeny(env.IMAGE_STUDIO_DATA_DIR) } },
     plugins: [
       react(),
       tailwindcss(),
