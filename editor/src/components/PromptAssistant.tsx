@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ImageStudy } from '../../lib/image-studio-contract';
-import { assetApi, libraryUrl } from '../lib/asset-api';
+import { assetApi } from '../lib/asset-api';
 import { Button } from './ui/button';
 
 type Props = { onSnapshot: () => Promise<ImageStudy>; onApply: (study: ImageStudy) => void; disabled?: boolean };
@@ -32,6 +32,6 @@ export function PromptAssistant({ onSnapshot, onApply, disabled }: Props) {
     <Button type="button" variant="outline" size="sm" disabled={disabled || busy || !instruction.trim()} onClick={() => void save(true)}>{busy ? 'Saving & thinking…' : 'Suggest a content prompt'}</Button>
     {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
     {suggestion && <div className="space-y-3 border-t pt-3"><span className="image-kicker">Proposed content</span><p className="whitespace-pre-wrap text-sm leading-relaxed">{suggestion.scene}</p><p className="text-xs leading-relaxed text-muted-foreground">{suggestion.assistant?.explanation}</p><Button type="button" size="sm" disabled={disabled} onClick={() => { onApply(suggestion); setSuggestion(undefined); }}>Use this version</Button><p className="text-xs text-muted-foreground">This replaces the current content with the saved suggestion. Scenic direction stays with its saved version.</p></div>}
-    {saved && <a className="block text-xs underline underline-offset-4" href={libraryUrl(saved.id)}>Saved on server · Browse this version →</a>}
+    {saved && <a className="block text-xs underline underline-offset-4" href={`/studio/${saved.object ? 'object' : 'images'}?asset=${saved.id}`}>Saved on server · Open this version in studio →</a>}
   </div>;
 }
