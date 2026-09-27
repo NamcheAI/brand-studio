@@ -27,7 +27,7 @@ export function PromptAssistant({ onSnapshot, onApply, disabled }: Props) {
   }
   return <div className="space-y-3 rounded-lg border bg-muted/30 p-3">
     <div className="flex items-center justify-between gap-2"><span className="text-xs font-medium">Prompt workshop</span><Button type="button" variant="outline" size="xs" disabled={disabled || busy} onClick={() => void save(false)}>Save version</Button></div>
-    <p className="text-xs leading-relaxed text-muted-foreground">Keep the atmosphere. Refine what the image shows — framing, gesture, detail or material.</p>
+    <p className="text-xs leading-relaxed text-muted-foreground">Keep the atmosphere. Refine the framing, gesture, detail or material in the image.</p>
     <label className="block text-xs">What would you like to change?<textarea aria-label="Prompt refinement" rows={3} maxLength={2000} className="mt-2 w-full resize-y rounded border bg-background p-2 text-sm" placeholder="Closer crop, with one hand in focus…" value={instruction} onChange={event => setInstruction(event.target.value)} /></label>
     <Button type="button" variant="outline" size="sm" disabled={disabled || busy || !instruction.trim()} onClick={() => void save(true)}>{busy ? 'Saving & thinking…' : 'Suggest a content prompt'}</Button>
     {error && <p role="alert" className="text-xs text-destructive">{error}</p>}

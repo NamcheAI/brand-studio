@@ -99,7 +99,7 @@ export default function AssetLibrary() {
     </div>
     {error && <p role="alert" className="m-5 rounded-lg border border-destructive p-4 text-sm text-destructive">{error}</p>}
     <div className="grid lg:grid-cols-[280px_minmax(0,1fr)]">
-      <aside className="border-b p-5 lg:max-h-[calc(100svh-145px)] lg:overflow-auto lg:border-r lg:border-b-0">
+      <aside className="min-w-0 border-b p-5 lg:max-h-[calc(100svh-145px)] lg:overflow-auto lg:border-r lg:border-b-0">
         <p className="mb-4 text-xs text-muted-foreground">Images and the decisions behind them.<br />Saved on server · Private to this browser.</p>
         <div className="flex gap-3 overflow-x-auto pb-1 lg:grid lg:grid-cols-1 lg:overflow-visible">{items.map(item => <button key={item.id} aria-pressed={item.id === selected?.id} onClick={() => setSelected(item)} className={`w-40 shrink-0 overflow-hidden rounded-lg border text-left lg:w-auto ${item.id === selected?.id ? 'ring-2 ring-foreground' : 'hover:border-foreground/50'}`}>
           <div className="flex aspect-[16/10] items-center justify-center bg-muted">{item.imageUrl ? <img src={item.imageUrl} alt={item.scene} loading="lazy" className="size-full object-cover" /> : <span className="image-kicker">{item.status === 'draft' ? 'Prompt version' : item.status}</span>}</div>
