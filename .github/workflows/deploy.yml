@@ -1,8 +1,8 @@
 name: deploy
 
-# Release pipeline for metaball.namche.ai. After CI succeeds for a push to main,
+# Release pipeline for brand.namche.ai. After CI succeeds for a push to main,
 # and only when the DEPLOYS_ENABLED repository variable is `1`, this workflow
-# builds ghcr.io/namcheai/metaball and dispatches its immutable digest to
+# builds ghcr.io/namcheai/brand-studio and dispatches its immutable digest to
 # NamcheAI/infra's deploy-app.yml via INFRA_DISPATCH_TOKEN. Infra owns the
 # tailnet join, the host keys and the deploy credential.
 #
@@ -41,7 +41,7 @@ concurrency:
 permissions: {}
 
 env:
-  IMAGE: ghcr.io/namcheai/metaball
+  IMAGE: ghcr.io/namcheai/brand-studio
   # Avoid the automatic, 90-day Docker build-record artifact per deploy.
   DOCKER_BUILD_RECORD_UPLOAD: "false"
 
@@ -149,7 +149,7 @@ jobs:
           # default branch first, and that lookup needs `Contents: read`, which
           # the dispatch PAT deliberately does not carry.
           gh workflow run deploy-app.yml -R NamcheAI/infra --ref main \
-            -f app=metaball \
+            -f app=brand-studio \
             -f environment=production \
             -f image="$IMAGE_REF"
           echo "::notice::Dispatched production deploy of ${IMAGE_REF} to NamcheAI/infra. Outcome: https://github.com/NamcheAI/infra/actions/workflows/deploy-app.yml"

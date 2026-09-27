@@ -1,4 +1,4 @@
-# Self-hosted container for NAMCHE Brand Studio (metaball.namche.ai).
+# Self-hosted container for NAMCHE Brand Studio (brand.namche.ai).
 #
 # Multi-stage build: the `build` stage has the full workspace (all
 # devDependencies, TypeScript, Vite) and produces studio/dist (the built

@@ -35,7 +35,7 @@ npm run preview  # preview the production build
 NAMCHE Brand Studio has no authentication. There is no login, no PIN, no gate in
 front of any route. Anyone who can reach a deployment can open it and use it.
 (Jodok, 2026-08-25: the Studio deploys as a public container at
-metaball.namche.ai; an earlier Vercel PIN gate and the Vercel deployment path
+brand.namche.ai (formerly metaball.namche.ai); an earlier Vercel PIN gate and the Vercel deployment path
 itself have both been removed entirely — the self-hosted container is now the
 only way this Studio ships.)
 
