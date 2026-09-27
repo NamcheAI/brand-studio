@@ -1,3 +1,4 @@
+import { StudioHeaderLink } from './StudioHeaderLink';
 import { useEffect, useRef, useState } from 'react';
 import { ArrowDownToLineIcon, ArrowUpRightIcon, ImagePlusIcon, Loader2Icon, RotateCcwIcon, SparklesIcon, XIcon } from 'lucide-react';
 import { PromptAssistant } from './PromptAssistant';
@@ -155,15 +156,15 @@ export default function ImageStudio() {
 
   return <main className="image-studio min-h-svh bg-background text-foreground">
     <header className="flex min-h-16 flex-wrap items-center justify-between gap-3 border-b px-5 py-3 sm:px-8">
-      <a href="/studio" className="flex items-center gap-3" aria-label="Namche Studio home">
+      <StudioHeaderLink href="/studio" className="flex items-center gap-3" aria-label="Namche Studio home">
         <img src="/namche-mark.svg" alt="" className="size-7 dark:invert" />
         <div><p className="font-mono text-[9px] tracking-[.2em] uppercase text-muted-foreground">Namche Studio</p><p className="font-display text-lg">Image making</p></div>
-      </a>
+      </StudioHeaderLink>
       <nav aria-label="Studio" className="flex items-center gap-1 text-xs">
-        <a className="rounded-full px-3 py-2 hover:bg-muted" href="/studio/mark">2D mark</a>
-        <a className="rounded-full px-3 py-2 hover:bg-muted" href="/studio/object">3D object</a>
-        <a className="rounded-full bg-foreground px-3 py-2 text-background" href="/studio/images" aria-current="page">Images</a>
-        <a className="rounded-full px-3 py-2 hover:bg-muted" href="/studio/library">Library</a>
+        <StudioHeaderLink className="rounded-full px-3 py-2 hover:bg-muted" href="/studio/mark">2D mark</StudioHeaderLink>
+        <StudioHeaderLink className="rounded-full px-3 py-2 hover:bg-muted" href="/studio/object">3D object</StudioHeaderLink>
+        <StudioHeaderLink className="rounded-full bg-foreground px-3 py-2 text-background" href="/studio/images" aria-current="page">Images</StudioHeaderLink>
+        <StudioHeaderLink className="rounded-full px-3 py-2 hover:bg-muted" href="/studio/library">Library</StudioHeaderLink>
         <ThemeMenu />
       </nav>
     </header>

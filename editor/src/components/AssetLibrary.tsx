@@ -1,3 +1,4 @@
+import { StudioHeaderLink } from './StudioHeaderLink';
 import { useEffect, useRef, useState } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon, Loader2Icon } from 'lucide-react';
 import { imageStyles, studyLabel, type ImageStudy } from '../../lib/image-studio-contract';
@@ -97,8 +98,8 @@ export default function AssetLibrary() {
   const index = items.findIndex(item => item.id === selected?.id);
   return <main className="min-h-svh bg-background text-foreground">
     <header className="flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4 sm:px-8">
-      <a href="/studio" className="flex items-center gap-3"><img src="/namche-mark.svg" alt="" className="size-7 dark:invert" /><div><p className="image-kicker">Namche Studio</p><h1 className="font-display text-xl">Asset library</h1></div></a>
-      <nav aria-label="Studio" className="flex flex-wrap items-center gap-4 text-xs"><a href="/studio/mark">2D mark</a><a href="/studio/object">3D object</a><a href="/studio/images">Images</a><ThemeMenu /></nav>
+      <StudioHeaderLink href="/studio" className="flex items-center gap-3"><img src="/namche-mark.svg" alt="" className="size-7 dark:invert" /><div><p className="image-kicker">Namche Studio</p><h1 className="font-display text-xl">Asset library</h1></div></StudioHeaderLink>
+      <nav aria-label="Studio" className="flex flex-wrap items-center gap-4 text-xs"><StudioHeaderLink href="/studio/mark">2D mark</StudioHeaderLink><StudioHeaderLink href="/studio/object">3D object</StudioHeaderLink><StudioHeaderLink href="/studio/images">Images</StudioHeaderLink><ThemeMenu /></nav>
     </header>
     <div className="flex flex-wrap items-center gap-3 border-b px-5 py-4 sm:px-8">
       <select aria-label="Filter studio" className={selectClass} value={studio} onChange={event => { setStudio(event.target.value); setTheme(''); }}><option value="">All studios</option><option value="images">Images</option><option value="object">3D Metaball</option></select>
