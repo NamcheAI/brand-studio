@@ -10,7 +10,39 @@ import {
   edgeKey,
   presetIdForDocument,
 } from '../src/lib/model';
-import { initialDocument, normalizeDocument, parseDocumentJson } from '../src/lib/persistence';
+import { STORAGE_KEY, initialDocument, loadDocument, normalizeDocument, parseDocumentJson } from '../src/lib/persistence';
+
+const LEGACY_STORAGE_KEY = 'metaball-editor-document';
+
+/**
+ * A minimal in-memory localStorage stand-in — Node's test runner has no DOM.
+ * Node's test runner shares one module instance across this file's tests, so
+ * every stub is removed again once its test finishes; otherwise it would
+ * leak into unrelated tests (e.g. `initialDocument()` would start reading
+ * this fake storage instead of running with none, as those tests assume).
+ */
+function stubLocalStorage(seed: Record<string, string> = {}) {
+  const store = new Map(Object.entries(seed));
+  const stub: Storage = {
+    getItem: (key) => store.get(key) ?? null,
+    setItem: (key, value) => void store.set(key, String(value)),
+    removeItem: (key) => void store.delete(key),
+    clear: () => store.clear(),
+    key: (index) => [...store.keys()][index] ?? null,
+    get length() {
+      return store.size;
+    },
+  };
+  const target = globalThis as typeof globalThis & { localStorage?: Storage };
+  const previous = target.localStorage;
+  target.localStorage = stub;
+  return {
+    store,
+    restore: () => {
+      target.localStorage = previous;
+    },
+  };
+}
 
 test('import sanitizes geometry, styles, and studio settings', () => {
   const doc = normalizeDocument({
@@ -53,6 +85,37 @@ test('individual node overrides are clamped', () => {
 
 test('invalid JSON still fails loudly for the UI error path', () => {
   assert.throws(() => parseDocumentJson('{'));
+});
+
+test('loadDocument migrates the pre-rename storage key to the new one', () => {
+  const doc = initialDocument();
+  const { store, restore } = stubLocalStorage({
+    [LEGACY_STORAGE_KEY]: JSON.stringify({ ...doc, version: DOCUMENT_VERSION }),
+  });
+  try {
+    const loaded = loadDocument();
+
+    assert.ok(loaded);
+    assert.equal(presetIdForDocument(loaded!), presetIdForDocument(doc));
+    assert.ok(store.has(STORAGE_KEY), 'the document is copied onto the new key');
+    assert.ok(!store.has(LEGACY_STORAGE_KEY), 'the old key is retired once migrated');
+  } finally {
+    restore();
+  }
+});
+
+test('loadDocument prefers the new storage key when both are present', () => {
+  const doc = initialDocument();
+  const { restore } = stubLocalStorage({
+    [STORAGE_KEY]: JSON.stringify({ ...doc, version: DOCUMENT_VERSION, rasterEnabled: false }),
+    [LEGACY_STORAGE_KEY]: JSON.stringify({ ...doc, version: DOCUMENT_VERSION, rasterEnabled: true }),
+  });
+  try {
+    const loaded = loadDocument();
+    assert.equal(loaded?.rasterEnabled, false);
+  } finally {
+    restore();
+  }
 });
 
 test('new documents use Namche Loop, raster on, and opt-in surface sampling', () => {

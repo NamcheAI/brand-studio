@@ -48,7 +48,8 @@ import { normalizeLiquidBackdropId } from './liquidBackdrops';
 import { getMaterialPreset } from './materialPresets';
 import { isTextureSlug } from './texturePresets';
 
-export const STORAGE_KEY = 'metaball-editor-document';
+export const STORAGE_KEY = 'namche-studio-document';
+const LEGACY_STORAGE_KEY = 'metaball-editor-document';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -205,7 +206,17 @@ export function saveDocument(doc: Document): void {
 
 export function loadDocument(): Document | null {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    let raw = localStorage.getItem(STORAGE_KEY);
+    if (raw === null) {
+      // The rename moved the key; fall back to the pre-rename one so a
+      // returning visitor's document survives, then migrate it forward.
+      const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
+      if (legacy !== null) {
+        raw = legacy;
+        localStorage.setItem(STORAGE_KEY, legacy);
+        localStorage.removeItem(LEGACY_STORAGE_KEY);
+      }
+    }
     return raw ? normalizeDocument(JSON.parse(raw)) : null;
   } catch {
     return null;

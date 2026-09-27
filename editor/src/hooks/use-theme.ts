@@ -2,7 +2,8 @@ import { useCallback, useSyncExternalStore } from 'react'
 
 export type Theme = 'light' | 'dark' | 'system'
 
-const STORAGE_KEY = 'metaball-theme'
+const STORAGE_KEY = 'namche-studio-theme'
+const LEGACY_STORAGE_KEY = 'metaball-theme'
 
 function getSystemTheme(): 'light' | 'dark' {
   if (typeof window === 'undefined') return 'light'
@@ -12,7 +13,9 @@ function getSystemTheme(): 'light' | 'dark' {
 function readStoredTheme(): Theme {
   if (typeof window === 'undefined') return 'system'
   try {
-    const stored = window.localStorage.getItem(STORAGE_KEY)
+    // The rename moved the key; read the new one first and fall back to the
+    // pre-rename key so a returning visitor's preference survives.
+    const stored = window.localStorage.getItem(STORAGE_KEY) ?? window.localStorage.getItem(LEGACY_STORAGE_KEY)
     if (stored === 'light' || stored === 'dark') return stored
   } catch {
     // localStorage may be unavailable (e.g. privacy mode).
@@ -56,6 +59,9 @@ function setStoredTheme(next: Theme) {
     } else {
       window.localStorage.setItem(STORAGE_KEY, next)
     }
+    // Every write finishes the migration: the old key is retired so it can
+    // never shadow a future read of the new one.
+    window.localStorage.removeItem(LEGACY_STORAGE_KEY)
   } catch {
     // localStorage may be unavailable (e.g. privacy mode).
   }

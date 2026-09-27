@@ -7,12 +7,16 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=brand-assets-1.0.0" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#f1efe8" />
-    <meta name="description" content="NAMCHE Metaball Studio" />
-    <title>NAMCHE — Metaball Studio</title>
+    <meta name="description" content="NAMCHE Brand Studio" />
+    <title>NAMCHE — Brand Studio</title>
     <script>
       (function () {
         try {
-          var stored = localStorage.getItem('metaball-theme');
+          // Read the current key, falling back to the pre-rename one so a
+          // returning visitor keeps their preference; writes below always
+          // land on the new key (use-theme.ts finishes the migration).
+          var stored = localStorage.getItem('namche-studio-theme');
+          if (stored === null) stored = localStorage.getItem('metaball-theme');
           var isDark =
             stored === 'dark' ||
             (stored !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);

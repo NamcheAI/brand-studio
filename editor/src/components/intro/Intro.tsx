@@ -4,6 +4,7 @@ import type { GenerateParams } from '@namche/metaball';
 import { Button } from '@/components/ui/button';
 import { ThemeMenu } from '@/components/theme-menu';
 import { useTheme } from '@/hooks/use-theme';
+import { BRAND } from '../../lib/brand';
 import { DAY_THEME, NIGHT_THEME, SVG_SIZE, cellRect, type Theme } from '../../lib/model';
 import AppCredits from '../AppCredits';
 import { ArtFrame, GraphLayer, GrowingMark, NodeLayer, TracedMark } from './IntroArt';
@@ -81,9 +82,9 @@ function BrandLockup() {
           on its own and the wordmark steps aside. */}
       <span className="hidden min-w-0 flex-col leading-none sm:flex">
         <span className="font-mono text-[0.5625rem] font-medium tracking-[0.18em] text-muted-foreground uppercase">
-          NAMCHE
+          {BRAND.wordmark}
         </span>
-        <span className="truncate font-display text-base font-medium">Metaball Studio</span>
+        <span className="truncate font-display text-base font-medium">{BRAND.product}</span>
       </span>
     </a>
   );

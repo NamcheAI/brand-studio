@@ -6,6 +6,19 @@ import { Loader2Icon } from 'lucide-react';
 import { toast } from 'sonner';
 import MetaballCanvas from './components/MetaballCanvas';
 import Toolbar from './components/Toolbar';
+import type {
+  FormTuning,
+  MarkPanelProps,
+  ObjectPanelProps,
+  RenderResultActions,
+  ShapePresets,
+} from './components/panels/types';
+import type { FileActions } from './components/toolbar/file-menu';
+import { Segmented } from './components/toolbar/segmented';
+import { PlaybackBar, type Playback } from './components/stage/PlaybackBar';
+import { RenderBar, RenderOverlay, RenderViewSwitch } from './components/stage/RenderStage';
+import { Stage, StageChip } from './components/stage/Stage';
+import { useAIRenders } from './lib/useAIRenders';
 import { Toaster } from '@/components/ui/sonner';
 import { copySvgToClipboard, exportPng, exportSvg, type FlattenSpec } from './lib/export';
 import {
@@ -925,181 +938,243 @@ export default function App({ initialView = '2d' }: { initialView?: ViewMode } =
     return params.preset === 'brandmark' ? generate(params).d : null;
   }, [displayDoc]);
 
+  const ai = useAIRenders({
+    onRender: doAIRender,
+    onSuggestMetamorph: doSuggestMetamorph,
+    restoredRender,
+  });
+
+  // An edit to the object while a render covers the stage would change
+  // nothing visible, so any document change falls back to the live view.
+  const { setShowRender } = ai;
+  useEffect(() => {
+    setShowRender(false);
+  }, [doc, setShowRender]);
+
+  const formTuning: FormTuning = {
+    values: {
+      tubeFactor: doc.tubeFactor,
+      gooStd: doc.gooStd,
+      gooThreshold: doc.gooThreshold,
+      inwardPull: doc.inwardPull,
+    },
+    scrub: (key, value) => scrubDocField(key, value),
+    commit: endScrub,
+  };
+  const presets: ShapePresets = { activePresetId, onApply: applyPreset };
+
+  const playback: Playback = {
+    growing,
+    canGrow: doc.nodes.length > 0,
+    onGrowToggle: toggleGrowth,
+    activeMotion,
+    canMotion: doc.nodes.length > 0,
+    onMotionToggle: toggleMotion,
+    breakNecks,
+    onBreakNecksChange: setBreakNecks,
+  };
+
+  const historyActions = {
+    canUndo: canUndo(history),
+    canRedo: canRedo(history),
+    onUndo: undo,
+    onRedo: redo,
+  };
+
+  const fileActions: FileActions = {
+    onImportJson: () => importRef.current?.click(),
+    onExportJson: doExportJson,
+    onClear: clear,
+    ...(view === '3d'
+      ? { onExportGlb: doExportGlb, onExportBlender: doExportBlenderHandoff }
+      : null),
+  };
+
+  const markPanel = (): MarkPanelProps => ({
+    selectionId: selected ?? selectedEdge,
+    shape: {
+      mode: doc.mode,
+      presets,
+      form: formTuning,
+      node: selectedNode
+        ? {
+            size: selectedNode.size,
+            radius: selectedRadius,
+            radiusOverridden,
+            radiusMin: RADIUS_MIN,
+            radiusMax: RADIUS_MAX,
+            onSizeChange: setSelectedSize,
+            onRadiusChange: setSelectedRadius,
+            onRadiusCommit: endScrub,
+            onRadiusReset: resetSelectedRadius,
+            onDelete: () => selected && removeNode(selected),
+          }
+        : null,
+      edge:
+        selectedEdge && effectiveEdgeFactor !== null && effectiveEdgePull !== null
+          ? {
+              factor: effectiveEdgeFactor,
+              factorOverridden: edgeFactorOverridden,
+              pull: effectiveEdgePull,
+              pullOverridden: edgePullOverridden,
+              onFactorChange: setEdgeFactor,
+              onFactorCommit: endScrub,
+              onFactorReset: resetEdgeFactor,
+              onPullChange: setEdgePull,
+              onPullCommit: endScrub,
+              onPullReset: resetEdgePull,
+              onEnableStyle: enableEdgeStyle,
+              onDisableStyle: disableEdgeStyle,
+              onRemove: removeSelectedEdge,
+            }
+          : null,
+      fullGrid: doc.fullGrid,
+      onFullGridChange: (v) => updateDocField('fullGrid', v),
+    },
+    style: {
+      theme: doc.theme,
+      onThemeChange: scrubTheme,
+      onThemeCommit: endScrub,
+      rasterEnabled: doc.rasterEnabled,
+      onRasterEnabledChange: (v) => updateDocField('rasterEnabled', v),
+    },
+    export: {
+      mode: doc.mode,
+      markOnly,
+      onMarkOnlyChange: setMarkOnly,
+      pngScale,
+      onPngScaleChange: setPngScale,
+      onExportSvg: doExportSvg,
+      onExportPng: doExportPng,
+      onCopySvg: doCopySvg,
+      showExportPreview,
+      onShowExportPreviewChange: setShowExportPreview,
+      flattenEpsilon: doc.flattenEpsilon,
+      flattenResolution: doc.flattenResolution,
+      onFlattenScrub: (key, value) => scrubDocField(key, value),
+      onFlattenCommit: endScrub,
+    },
+  });
+
+  const scene = { lighting: sceneLighting, background: sceneBackground, canvas: sceneCanvas };
+
+  const objectPanel = (): ObjectPanelProps => ({
+    shape: { presets, form: formTuning },
+    surface: {
+      lookMode: doc.lookMode,
+      onLookModeChange: (mode: LookMode) => updateDocField('lookMode', mode),
+      material: {
+        preset: doc.materialPreset,
+        onPresetChange: (id) => updateDocField('materialPreset', id),
+        textureSlug: doc.textureSlug,
+        onTextureSlugChange: (slug) => updateDocField('textureSlug', slug),
+        textureScale: doc.textureScale,
+        onTextureScaleChange: (value) => updateDocField('textureScale', value),
+        textureAmount: doc.textureAmount,
+        onTextureAmountChange: (value) => updateDocField('textureAmount', value),
+      },
+      liquid: {
+        preset: doc.liquidPreset,
+        onPresetChange: (id) => {
+          const preset = getLiquidPreset(id);
+          commit({
+            ...cloneDocument(doc),
+            liquidPreset: preset.id,
+            liquidParams: cloneLiquidParams(preset.params),
+            lookMode: 'liquid',
+          });
+        },
+        params: doc.liquidParams,
+        onParamsScrub: (patch: Partial<LiquidParams>) =>
+          scrub((d) => ({
+            ...d,
+            lookMode: 'liquid',
+            liquidParams: { ...d.liquidParams, ...patch },
+          })),
+        onParamsCommit: endScrub,
+      },
+      sampler: {
+        values: {
+          surfaceSamplerEnabled: doc.surfaceSamplerEnabled,
+          surfaceSamplerMode: doc.surfaceSamplerMode,
+          surfaceSamplerCount: doc.surfaceSamplerCount,
+          surfaceSamplerPointSize: doc.surfaceSamplerPointSize,
+          surfaceSamplerSphereSize: doc.surfaceSamplerSphereSize,
+          surfaceSamplerShowMesh: doc.surfaceSamplerShowMesh,
+          surfaceSamplerAnimate: doc.surfaceSamplerAnimate,
+        },
+        set: (key, value) => updateDocField(key, value),
+        scrub: (key, value) =>
+          scrubDocField(
+            key,
+            key === 'surfaceSamplerCount'
+              ? clampSurfaceSamplerCount(value)
+              : key === 'surfaceSamplerPointSize'
+                ? clampSurfaceSamplerPointSize(value)
+                : clampSurfaceSamplerSphereSize(value),
+          ),
+        commit: endScrub,
+      },
+    },
+    scene: {
+      scene,
+      onSceneChange: (next) => {
+        if (next.lighting !== undefined) setSceneLighting(next.lighting);
+        if (next.background !== undefined) setSceneBackground(next.background);
+        if (next.canvas !== undefined) setSceneCanvas(next.canvas);
+      },
+      lookMode: doc.lookMode,
+      liquidBackdrop: doc.liquidBackdrop,
+      onLiquidBackdropChange: (id) => updateDocField('liquidBackdrop', id),
+    },
+    render: {
+      session: ai,
+      canRender: view === '3d',
+      scene,
+      textureSlug: doc.textureSlug,
+      referenceName: customRefImage?.fileName ?? null,
+      onAttachReference: () => refImageInputRef.current?.click(),
+      onClearReference: () => {
+        setCustomRefImage(null);
+        setRestoredTexture(undefined);
+      },
+      onSavePrompt: doSaveAIPrompt,
+      onApplyPrompt: (study) => {
+        if (!study.object) return;
+        setAssetParentId(study.id);
+        setSceneLighting(study.object.params.lightingDescription);
+        setSceneBackground(study.object.params.backgroundDescription);
+        setSceneCanvas(study.object.params.background);
+      },
+    },
+  });
+
+  const renderActions: RenderResultActions = {
+    onExportBundle: (result: AIRenderResult, params: AIRenderParams) =>
+      exportRenderBundle({
+        result,
+        params: {
+          ...params,
+          lightingDescription: sceneLighting,
+          backgroundDescription: sceneBackground,
+          background: sceneCanvas,
+        },
+        doc,
+        textureSlug: doc.textureSlug,
+        referenceName: customRefImage?.fileName ?? null,
+      }),
+  };
+
+  const showingRender = view === '3d' && ai.showRender && ai.selected !== null;
+
   return (
     <>
       <div className="grid h-dvh grid-cols-1 grid-rows-[3.5rem_auto_1fr] overflow-hidden md:grid-cols-[340px_1fr] md:grid-rows-[3.5rem_1fr]">
-        <Toolbar
-          mode={doc.mode}
-          onModeChange={(mode) => updateDocField('mode', mode)}
-          view={view}
-
-          materialPreset={doc.materialPreset}
-          onMaterialPresetChange={(id) => updateDocField('materialPreset', id)}
-          textureSlug={doc.textureSlug}
-          onTextureSlugChange={(slug) => updateDocField('textureSlug', slug)}
-          textureScale={doc.textureScale}
-          onTextureScaleChange={(value) => updateDocField('textureScale', value)}
-          textureAmount={doc.textureAmount}
-          onTextureAmountChange={(value) => updateDocField('textureAmount', value)}
-          lookMode={doc.lookMode}
-          onLookModeChange={(mode: LookMode) => updateDocField('lookMode', mode)}
-          liquidPreset={doc.liquidPreset}
-          onLiquidPresetChange={(id) => {
-            const preset = getLiquidPreset(id);
-            commit({
-              ...cloneDocument(doc),
-              liquidPreset: preset.id,
-              liquidParams: cloneLiquidParams(preset.params),
-              lookMode: 'liquid',
-            });
-          }}
-          liquidBackdrop={doc.liquidBackdrop}
-          onLiquidBackdropChange={(id) => updateDocField('liquidBackdrop', id)}
-          liquidParams={doc.liquidParams}
-          onLiquidParamsChange={(patch: Partial<LiquidParams>) =>
-            scrub((d) => ({
-              ...d,
-              lookMode: 'liquid',
-              liquidParams: { ...d.liquidParams, ...patch },
-            }))
-          }
-          onLiquidParamsCommit={endScrub}
-          surfaceSamplerEnabled={doc.surfaceSamplerEnabled}
-          onSurfaceSamplerEnabledChange={(v) => updateDocField('surfaceSamplerEnabled', v)}
-          surfaceSamplerMode={doc.surfaceSamplerMode}
-          onSurfaceSamplerModeChange={(mode) => updateDocField('surfaceSamplerMode', mode)}
-          surfaceSamplerCount={doc.surfaceSamplerCount}
-          onSurfaceSamplerCountChange={(v) =>
-            scrubDocField('surfaceSamplerCount', clampSurfaceSamplerCount(v))
-          }
-          onSurfaceSamplerCountCommit={endScrub}
-          surfaceSamplerPointSize={doc.surfaceSamplerPointSize}
-          onSurfaceSamplerPointSizeChange={(v) =>
-            scrubDocField('surfaceSamplerPointSize', clampSurfaceSamplerPointSize(v))
-          }
-          onSurfaceSamplerPointSizeCommit={endScrub}
-          surfaceSamplerSphereSize={doc.surfaceSamplerSphereSize}
-          onSurfaceSamplerSphereSizeChange={(v) =>
-            scrubDocField('surfaceSamplerSphereSize', clampSurfaceSamplerSphereSize(v))
-          }
-          onSurfaceSamplerSphereSizeCommit={endScrub}
-          surfaceSamplerShowMesh={doc.surfaceSamplerShowMesh}
-          onSurfaceSamplerShowMeshChange={(v) => updateDocField('surfaceSamplerShowMesh', v)}
-          surfaceSamplerAnimate={doc.surfaceSamplerAnimate}
-          onSurfaceSamplerAnimateChange={(v) => updateDocField('surfaceSamplerAnimate', v)}
-          selectedSize={selectedNode?.size ?? null}
-          onSizeChange={setSelectedSize}
-          selectedRadius={selectedRadius}
-          radiusOverridden={radiusOverridden}
-          onRadiusChange={setSelectedRadius}
-          onRadiusCommit={endScrub}
-          onRadiusReset={resetSelectedRadius}
-          onDeleteSelected={() => selected && removeNode(selected)}
-          theme={doc.theme}
-          onThemeChange={scrubTheme}
-          onThemeCommit={endScrub}
-          showGrid={doc.rasterEnabled}
-          onShowGridChange={(v) => updateDocField('rasterEnabled', v)}
-          fullGrid={doc.fullGrid}
-          onFullGridChange={(v) => updateDocField('fullGrid', v)}
-          gooStd={doc.gooStd}
-          onGooStdChange={(v) => scrubDocField('gooStd', v)}
-          onGooStdCommit={endScrub}
-          gooThreshold={doc.gooThreshold}
-          onGooThresholdChange={(v) => scrubDocField('gooThreshold', v)}
-          onGooThresholdCommit={endScrub}
-          tubeFactor={doc.tubeFactor}
-          onTubeFactorChange={(v) => scrubDocField('tubeFactor', v)}
-          onTubeFactorCommit={endScrub}
-          inwardPull={doc.inwardPull}
-          onInwardPullChange={(v) => scrubDocField('inwardPull', v)}
-          onInwardPullCommit={endScrub}
-          flattenEpsilon={doc.flattenEpsilon}
-          onFlattenEpsilonChange={(v) => scrubDocField('flattenEpsilon', v)}
-          onFlattenEpsilonCommit={endScrub}
-          flattenResolution={doc.flattenResolution}
-          onFlattenResolutionChange={(v) => scrubDocField('flattenResolution', v)}
-          onFlattenResolutionCommit={endScrub}
-          showExportPreview={showExportPreview}
-          onShowExportPreviewChange={setShowExportPreview}
-          selectedEdge={selectedEdge}
-          edgeFactor={effectiveEdgeFactor}
-          edgeFactorOverridden={edgeFactorOverridden}
-          onEdgeFactorChange={setEdgeFactor}
-          onEdgeFactorCommit={endScrub}
-          onEdgeFactorReset={resetEdgeFactor}
-          edgePull={effectiveEdgePull}
-          edgePullOverridden={edgePullOverridden}
-          onEdgePullChange={setEdgePull}
-          onEdgePullCommit={endScrub}
-          onEdgePullReset={resetEdgePull}
-          onEnableEdgeStyle={enableEdgeStyle}
-          onDisableEdgeStyle={disableEdgeStyle}
-          onRemoveEdge={removeSelectedEdge}
-          markOnly={markOnly}
-          onMarkOnlyChange={setMarkOnly}
-          pngScale={pngScale}
-          onPngScaleChange={setPngScale}
-          canUndo={canUndo(history)}
-          canRedo={canRedo(history)}
-          activePresetId={activePresetId}
-          onUndo={undo}
-          onRedo={redo}
-          onApplyPreset={applyPreset}
-          onClear={clear}
-          onExportSvg={doExportSvg}
-          onExportPng={doExportPng}
-          onCopySvg={doCopySvg}
-          onExportJson={doExportJson}
-          onExportGlb={doExportGlb}
-          onExportBlenderHandoff={doExportBlenderHandoff}
-          canAIRender={view === '3d'}
-          onAIRender={doAIRender}
-          restoredRender={restoredRender}
-          onSaveAIPrompt={doSaveAIPrompt}
-          onApplyAIPrompt={study => {
-            if (!study.object) return;
-            setAssetParentId(study.id);
-            setSceneLighting(study.object.params.lightingDescription);
-            setSceneBackground(study.object.params.backgroundDescription);
-            setSceneCanvas(study.object.params.background);
-          }}
-          onSuggestMetamorph={doSuggestMetamorph}
-          sceneLighting={sceneLighting}
-          onSceneLightingChange={setSceneLighting}
-          sceneBackground={sceneBackground}
-          onSceneBackgroundChange={setSceneBackground}
-          sceneCanvas={sceneCanvas}
-          onSceneCanvasChange={setSceneCanvas}
-          onExportRenderBundle={(result: AIRenderResult, params: AIRenderParams) =>
-            exportRenderBundle({
-              result,
-              params: {
-                ...params,
-                lightingDescription: sceneLighting,
-                backgroundDescription: sceneBackground,
-                background: sceneCanvas,
-              },
-              doc,
-              textureSlug: doc.textureSlug,
-              referenceName: customRefImage?.fileName ?? null,
-            })
-          }
-          refImageName={customRefImage?.fileName ?? null}
-          onAttachRefImageClick={() => refImageInputRef.current?.click()}
-          onClearRefImage={() => { setCustomRefImage(null); setRestoredTexture(undefined); }}
-          onImportJsonClick={() => importRef.current?.click()}
-          radiusMin={RADIUS_MIN}
-          radiusMax={RADIUS_MAX}
-          growing={growing}
-          onGrowToggle={toggleGrowth}
-          canGrow={doc.nodes.length > 0}
-          activeMotion={activeMotion}
-          onMotionToggle={toggleMotion}
-          canMotion={doc.nodes.length > 0}
-          breakNecks={breakNecks}
-          onBreakNecksChange={setBreakNecks}
-        />
+        {view === '2d' ? (
+          <Toolbar view="2d" history={historyActions} file={fileActions} panel={markPanel()} />
+        ) : (
+          <Toolbar view="3d" history={historyActions} file={fileActions} panel={objectPanel()} />
+        )}
 
         <input
           ref={importRef}
@@ -1134,64 +1209,86 @@ export default function App({ initialView = '2d' }: { initialView?: ViewMode } =
           }}
         />
 
-        <main
-          className="grid min-h-0 min-w-0 place-items-center overflow-hidden bg-muted/30 p-6 [container-type:size]"
+        <Stage
           style={{
             background: view === '2d' && doc.rasterEnabled ? doc.theme.bg : undefined,
           }}
-        >
-          {/* The mark always stays square and always fits the stage, on any
-              viewport: the stage is a size container, so the square is the
-              smaller of its two sides. */}
-          <div className="flex aspect-square w-[min(100cqw,100cqh,900px)]">
-            {view === '3d' ? (
-              <Suspense
-                fallback={
-                  <div className="flex size-full items-center justify-center gap-2 font-mono text-xs tracking-wide text-muted-foreground uppercase">
-                    <Loader2Icon className="size-4 animate-spin" />
-                    Loading 3D…
-                  </div>
-                }
-              >
-                <Metaball3DPreview
-                  doc={displayDoc}
-                  meshRef={mesh3dRef}
-                  canvasHandleRef={canvas3dHandleRef}
-                  // Playback state is already capped at 30 fps. Rebuild immediately for each
-                  // emitted state so a trailing debounce cannot be starved by the same cadence.
-                  fieldDebounceMs={growing || activeMotion !== null ? 0 : undefined}
-                  continuous={activeMotion !== null || doc.lookMode === 'liquid'}
+          top={
+            view === '2d' ? (
+              <StageChip>
+                <Segmented
+                  label="2D canvas mode"
+                  value={doc.mode}
+                  onValueChange={(mode) => updateDocField('mode', mode)}
+                  className="w-auto"
+                  options={[
+                    { value: 'metaball', label: 'Form', hint: 'Style and export the mark.' },
+                    { value: 'graph', label: 'Graph', hint: 'Inspect and edit its network.' },
+                  ]}
                 />
-              </Suspense>
+              </StageChip>
+            ) : ai.selected || ai.status === 'rendering' ? (
+              <RenderViewSwitch session={ai} />
+            ) : null
+          }
+          bottom={
+            showingRender ? (
+              <RenderBar session={ai} actions={renderActions} />
             ) : (
-              <MetaballCanvas
-                ref={svgRef}
-                mode={doc.mode}
-                nodes={displayDoc.nodes}
-                edges={displayDoc.edges}
-                theme={doc.theme}
-                showGrid={doc.rasterEnabled}
-                fullGrid={doc.fullGrid}
-                gooStd={displayDoc.gooStd}
-                gooThreshold={doc.gooThreshold}
-                tubeFactor={displayDoc.tubeFactor}
-                inwardPull={displayDoc.inwardPull}
-                edgeFactors={displayDoc.edgeFactors}
-                edgePulls={displayDoc.edgePulls}
-                selected={selected}
-                selectedEdge={selectedEdge}
-                canonicalPath={canonical2dPath}
-                exportPreviewPath={exportPreviewPath}
-                onAddNode={addNode}
-                onSelect={selectNode}
-                onSelectEdge={selectEdge}
-                onToggleEdge={toggleEdge}
-                onRemoveNode={removeNode}
-                onMoveNode={moveNode}
+              <PlaybackBar playback={playback} />
+            )
+          }
+          overlay={view === '3d' ? <RenderOverlay session={ai} /> : null}
+        >
+          {view === '3d' ? (
+            <Suspense
+              fallback={
+                <div className="flex size-full items-center justify-center gap-2 font-mono text-xs tracking-wide text-muted-foreground uppercase">
+                  <Loader2Icon className="size-4 animate-spin" />
+                  Loading 3D…
+                </div>
+              }
+            >
+              {/* Stays mounted under a shown render: AI renders capture this
+                  canvas, and switching back to Live 3D must be instant. */}
+              <Metaball3DPreview
+                doc={displayDoc}
+                meshRef={mesh3dRef}
+                canvasHandleRef={canvas3dHandleRef}
+                // Playback state is already capped at 30 fps. Rebuild immediately for each
+                // emitted state so a trailing debounce cannot be starved by the same cadence.
+                fieldDebounceMs={growing || activeMotion !== null ? 0 : undefined}
+                continuous={activeMotion !== null || doc.lookMode === 'liquid'}
               />
-            )}
-          </div>
-        </main>
+            </Suspense>
+          ) : (
+            <MetaballCanvas
+              ref={svgRef}
+              mode={doc.mode}
+              nodes={displayDoc.nodes}
+              edges={displayDoc.edges}
+              theme={doc.theme}
+              showGrid={doc.rasterEnabled}
+              fullGrid={doc.fullGrid}
+              gooStd={displayDoc.gooStd}
+              gooThreshold={doc.gooThreshold}
+              tubeFactor={displayDoc.tubeFactor}
+              inwardPull={displayDoc.inwardPull}
+              edgeFactors={displayDoc.edgeFactors}
+              edgePulls={displayDoc.edgePulls}
+              selected={selected}
+              selectedEdge={selectedEdge}
+              canonicalPath={canonical2dPath}
+              exportPreviewPath={exportPreviewPath}
+              onAddNode={addNode}
+              onSelect={selectNode}
+              onSelectEdge={selectEdge}
+              onToggleEdge={toggleEdge}
+              onRemoveNode={removeNode}
+              onMoveNode={moveNode}
+            />
+          )}
+        </Stage>
       </div>
 
       <Toaster position="bottom-right" />
