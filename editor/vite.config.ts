@@ -11,6 +11,9 @@ import { handleRenderJobsRequest } from './server/render-jobs-route.js'
 import { runReplicateEnhance } from './lib/replicate-enhance.js'
 import type { AIEnhanceRequest, AIEnhanceResult } from './lib/ai-render-contract.js'
 import { runOpenAIImageRender as runRender } from './lib/openai-image-render.js'
+import { createImageStudioHandler } from './server/image-studio.js'
+import { imageStorageDeny } from './server/image-storage-deny.js'
+import { createRenderRateLimiter, renderRateLimitBudget, renderRateLimitKey } from './server/render-rate-limit.js'
 
 const DEV_RENDER_BODY_LIMIT = 12 * 1024 * 1024
 
@@ -42,7 +45,10 @@ function localAIRenderApi(options: {
   model?: string
   suggestModel?: string
   replicateToken?: string
+  dataDir?: string
 }): Plugin {
+  let imageStudio: ReturnType<typeof createImageStudioHandler> | undefined
+  const imageLimiter = createRenderRateLimiter(renderRateLimitBudget())
   const jobStore = new RenderJobStore((request) =>
     runRender(request, { apiKey: options.apiKey, model: options.model }),
   )
@@ -54,6 +60,20 @@ function localAIRenderApi(options: {
   return {
     name: 'namche-local-ai-render-api',
     configureServer(server) {
+      server.middlewares.use(async (request: IncomingMessage, response: ServerResponse, next) => {
+        const pathname = new URL(request.url ?? '/', 'http://localhost').pathname
+        if (pathname !== '/api/images' && !pathname.startsWith('/api/images/')) { next(); return }
+        if (pathname === '/api/images/jobs' && request.method === 'POST') {
+          const verdict = imageLimiter.take(renderRateLimitKey(request, false))
+          if (!verdict.allowed) {
+            response.setHeader('Retry-After', String(verdict.retryAfterSeconds))
+            sendJson(response, 429, { error: 'Render rate limit reached. Try again later.' })
+            return
+          }
+        }
+        imageStudio ??= createImageStudioHandler({ apiKey: options.apiKey, model: options.model, dataDir: options.dataDir })
+        await imageStudio(request, response, pathname)
+      })
       server.middlewares.use('/api/enhance', async (request: IncomingMessage, response: ServerResponse) => {
         const remainder = request.url ?? ''
         try {
@@ -124,6 +144,7 @@ function localAIRenderApi(options: {
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   return {
+    server: { fs: { deny: imageStorageDeny(env.IMAGE_STUDIO_DATA_DIR) } },
     plugins: [
       react(),
       tailwindcss(),
@@ -132,6 +153,7 @@ export default defineConfig(({ mode }) => {
         model: env.OPENAI_IMAGE_MODEL,
         suggestModel: env.OPENAI_SUGGEST_MODEL,
         replicateToken: env.REPLICATE_API_TOKEN,
+        dataDir: env.IMAGE_STUDIO_DATA_DIR,
       }),
     ],
     resolve: {

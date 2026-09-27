@@ -100,6 +100,9 @@ export function TopBar({
         >
           {view === '2d' ? '\u21c4 3D object' : '\u21c4 2D mark'}
         </Button>
+        <Button variant="ghost" size="xs" className="text-muted-foreground" render={<a href="/studio/images" />}>
+          Images
+        </Button>
 
         {view === '2d' && (
           <Segmented
