@@ -8,8 +8,8 @@ import StudioChooser from './components/StudioChooser.tsx'
    toolsets, so the choice is a navigation, not a toolbar toggle. The
    server's SPA fallback serves this same shell for every path, links are
    plain anchors, and the Studio is loaded lazily so the intro and the
-   chooser never download the editor. The legacy `/studio` deep link lands
-   on the chooser. */
+   chooser never download the Studio bundle. The legacy `/studio` deep link
+   lands on the chooser. */
 const Studio = lazy(() => import('./App.tsx'))
 const AssetLibrary = lazy(() => import('./components/AssetLibrary.tsx'))
 const ImageStudio = lazy(() => import('./components/ImageStudio.tsx'))

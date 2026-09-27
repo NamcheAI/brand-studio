@@ -14,7 +14,7 @@ reference it calls `/v1/images/generations`; with one it uses multipart
 
 ## History and privacy
 
-The editor has no account system. A random HttpOnly, SameSite=Strict cookie
+The Studio has no account system. A random HttpOnly, SameSite=Strict cookie
 identifies this browser's library. The server stores only a hash of that token
 and checks ownership for history, job status, generated images and references.
 Clearing cookies loses access to that library; this is not cross-device account
@@ -37,7 +37,7 @@ supports one active server process, consistent with the existing deploy model.
 
 ## Deployment
 
-Local development uses `editor/.data/image-studio` (gitignored), or
+Local development uses `studio/.data/image-studio` (gitignored), or
 `IMAGE_STUDIO_DATA_DIR`. The production image sets this to `/data/image-studio`
 and prepares `/data` for its non-root user. **Mount a persistent Docker volume
 at `/data` before enabling production use**, for example
@@ -81,7 +81,7 @@ The filters run on the server before pagination. Every entry has a direct link.
 A **prompt version** is an immutable `draft` record. Saving it requires no provider
 credentials and makes no paid call. Generation creates a separate `running` record
 linked by `promptVersionId`, which becomes `done` or `error`. Repeating it uses the
-saved prompts and reference bytes, never the current editor controls or a CDN's
+saved prompts and reference bytes, never the current Studio controls or a CDN's
 latest image. Editing and saving starts a new version linked by `parentId`.
 The image and 3D studios save a version before launching the paid image job.
 
@@ -90,7 +90,7 @@ Responses API configuration (`OPENAI_SUGGEST_MODEL`, default `gpt-5-mini`). It u
 [structured output](https://developers.openai.com/api/docs/guides/structured-outputs)
 to propose content plus an explanation. Scenic direction stays fixed. The result
 is another saved draft, with its instruction, previous content and explanation;
-it only enters the editor when the user chooses **Use this version**. Neither
+it only enters the Studio when the user chooses **Use this version**. Neither
 prompt suggestions nor viewing the library triggers image generation.
 
 3D entries also store the versioned Studio document, actual shape/camera capture,
@@ -104,7 +104,7 @@ be recovered retrospectively.
 **Download bundle** returns a ZIP containing `asset.json`, `prompt.txt`,
 `content-prompt.txt`, `scenic-prompt.txt`, available output/reference images, and
 (for 3D) `document.json` and the shape capture. The bundle is built from the saved
-record, not potentially changed editor state. No owner token/hash is included.
+record, not potentially changed Studio state. No owner token/hash is included.
 The library remains browser-private, using the same existing cookie and volume.
 
 ### Transport contract (independent of the implementation language)

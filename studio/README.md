@@ -1,4 +1,4 @@
-# Metaball Brandmark Editor
+# NAMCHE Brand Studio
 
 An interactive generator for the Namche metaball vocabulary. It opens on the
 current **Namche Loop** mark; the approved earlier vector remains available as
@@ -13,7 +13,7 @@ The compact Studio chrome uses the private tool lockup and local Namche Shadow
 display face. Its Basalt header mark and Rhododendron favicon are synced from
 the authoritative sibling `design` repository's generated brand-asset bundle;
 the public “Frontier AI Initiative” descriptor is intentionally omitted to keep
-the internal editor header compact.
+the internal Studio header compact.
 
 For finishes that cannot be simulated convincingly in a lightweight browser
 shader, Studio can send the current camera view plus an optional material
@@ -30,17 +30,17 @@ npm run build    # type-check + production build
 npm run preview  # preview the production build
 ```
 
-## The editor is public
+## The Studio is public
 
-Metaball Studio has no authentication. There is no login, no PIN, no gate in
+NAMCHE Brand Studio has no authentication. There is no login, no PIN, no gate in
 front of any route. Anyone who can reach a deployment can open it and use it.
-(Jodok, 2026-08-25: the editor deploys as a public container at
+(Jodok, 2026-08-25: the Studio deploys as a public container at
 metaball.namche.ai; an earlier Vercel PIN gate and the Vercel deployment path
 itself have both been removed entirely — the self-hosted container is now the
-only way this editor ships.)
+only way this Studio ships.)
 
 > **`/api/render` spends real money.** It calls a paid OpenAI image endpoint
-> on every request, and since the editor is public, anyone who can reach a
+> on every request, and since the Studio is public, anyone who can reach a
 > deployment can trigger it. The server caps this at `RENDER_MAX_PER_HOUR`
 > renders per client IP per hour (default 10, `0` disables the guard) — a
 > spending brake, not authentication. The limiter keys on the raw socket
@@ -62,7 +62,7 @@ server (the one described below), build it and run it directly:
 
 ```bash
 npm run build                            # from the repo root
-npm run serve -w metaball-editor         # node dist-server/server/index.js
+npm run serve -w @namche/brand-studio    # node dist-server/server/index.js
 ```
 
 See [`../docs/AI_RENDERING.md`](../docs/AI_RENDERING.md) for the render
@@ -70,7 +70,7 @@ pipeline and code boundaries.
 
 ## Self-hosted container
 
-The editor ships as a plain Docker image, built from the repo-root
+The Studio ships as a plain Docker image, built from the repo-root
 `Dockerfile`, with a small Node server at [`server/`](server) that serves the
 built `dist/` app and the `/api/render` and `/api/health` routes — there is
 no separate serverless deployment target any more.
@@ -79,15 +79,15 @@ no separate serverless deployment target any more.
 
 ```bash
 # from the repo root
-docker build -t metaball-editor .
-docker run -p 8080:8080 metaball-editor
+docker build -t namche-brand-studio .
+docker run -p 8080:8080 namche-brand-studio
 ```
 
 or locally without Docker, after `npm run build`:
 
 ```bash
-npm run build:server -w metaball-editor   # compiles server/ + lib/ to dist-server/
-npm run serve -w metaball-editor          # node dist-server/server/index.js
+npm run build:server -w @namche/brand-studio   # compiles server/ + lib/ to dist-server/
+npm run serve -w @namche/brand-studio          # node dist-server/server/index.js
 ```
 
 ### Environment variables
@@ -268,7 +268,7 @@ docs/
 ```
 
 The reusable viewer itself lives in the sibling `renderer/` workspace as
-`@namche/metaball-react`. The editor's ordinary material view consumes it;
+`@namche/metaball-react`. The Studio's ordinary material view consumes it;
 Liquid, surface sampling, and Blender/export hooks stay in the Studio adapter.
 See [`../docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md).
 

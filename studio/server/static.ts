@@ -61,7 +61,7 @@ function notFound(res: ServerResponse): void {
 }
 
 /**
- * Serves `editor/dist/` (the Vite build output): falls back to `index.html`
+ * Serves `studio/dist/` (the Vite build output): falls back to `index.html`
  * for client-side routes, and always writes a response (a real 404 for
  * missing assets or API-like paths, so the SPA fallback never masks a
  * broken asset URL).

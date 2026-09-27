@@ -25,7 +25,7 @@ CHECKs. Do not rebuild SurfaceDriver, displace, or Principled graphs here
 
 Read and execute:
 
-- [editor/docs/blender-render-style-prompt.md](../../../editor/docs/blender-render-style-prompt.md)
+- [studio/docs/blender-render-style-prompt.md](../../../studio/docs/blender-render-style-prompt.md)
 
 Placeholders: `OBJECT`, `WORKDIR`, `RENDER_STYLE` ∈
 `hyperrealistic | product | lookdev | clay`, optional `REFERENCE_IMAGE`.

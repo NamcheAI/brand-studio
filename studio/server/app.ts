@@ -17,7 +17,7 @@ import { readRequestBody } from './request-body.js';
 import { serveStatic } from './static.js';
 import { createImageStudioHandler } from './image-studio.js';
 
-// Compiled to dist-server/server/app.js; editor/dist/ (the Vite build) is a
+// Compiled to dist-server/server/app.js; studio/dist/ (the Vite build) is a
 // sibling of dist-server/ one level up from there.
 const DEFAULT_DIST_DIR = fileURLToPath(new URL('../../dist', import.meta.url));
 
@@ -39,7 +39,7 @@ export type RequestListener = (req: IncomingMessage, res: ServerResponse) => Pro
  */
 export function createRequestListener(options: AppOptions = {}): RequestListener {
   const distDir = options.distDir ?? DEFAULT_DIST_DIR;
-  // Spending guard, not authentication: the editor is public, but a render
+  // Spending guard, not authentication: the Studio is public, but a render
   // is a paid provider call whenever OPENAI_API_KEY is configured.
   const draftLimiter = createRenderRateLimiter(120);
   const renderLimiter = createRenderRateLimiter(renderRateLimitBudget());

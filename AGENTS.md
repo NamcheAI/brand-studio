@@ -1,4 +1,4 @@
-# Working on NAMCHE Metaball
+# Working on NAMCHE Brand Studio
 
 This repository is designed for visual, iterative work in Cursor as well as for
 normal TypeScript development. Preserve the visual intent, keep the package
@@ -11,7 +11,7 @@ npm install
 npm run dev
 ```
 
-The editor opens at `http://localhost:5173`. Before handing off a change, run:
+The Studio opens at `http://localhost:5173`. Before handing off a change, run:
 
 ```bash
 npm run typecheck
@@ -28,17 +28,17 @@ Do not edit generated `dist/` files. The build creates them.
 | --- | --- |
 | the 2D mark geometry, presets, rasterization, or SVG output | `core/src/` |
 | the reusable 3D viewer, camera, field, or organic material presets | `renderer/src/` |
-| editor controls, document state, motion, liquid, export, or Blender handoff | `editor/src/` |
-| AI render contracts, server adapters, or API routes | `editor/lib/` and `editor/server/` |
-| app colors and typography | `editor/src/index.css` using tokens from `@namche/design-tokens` |
-| Blender-agent instructions | `.cursor/skills/` and `editor/docs/` |
+| Studio controls, document state, motion, liquid, export, or Blender handoff | `studio/src/` |
+| AI render contracts, server adapters, or API routes | `studio/lib/` and `studio/server/` |
+| app colors and typography | `studio/src/index.css` using tokens from `@namche/design-tokens` |
+| Blender-agent instructions | `.cursor/skills/` and `studio/docs/` |
 
 Read [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) before moving code across
 these boundaries.
 
 ## Safe visual workflow
 
-1. Run the editor and reproduce the current look before editing.
+1. Run the Studio and reproduce the current look before editing.
 2. Change one concern at a time.
 3. Check both 2D and 3D. For 3D, rotate the object and test a narrow viewport.
 4. Test the default **Namche Loop** first, then one asymmetric preset such as R.
@@ -49,7 +49,7 @@ these boundaries.
 Canonical presets share the inner 3 × 3 authoring frame.
 `ENGINE.BRANDMARK_PATH` is the intentionally full-bleed official asset source;
 use the framed `brandmark` preset (or `ENGINE.BRANDMARK_PRESET_PATH`) inside the
-editor and renderer.
+Studio and renderer.
 
 Public uppercase data belongs under the frozen `ENGINE` namespace. Keep root
 named exports for functions and types lowercase/PascalCase-safe; adding loose
@@ -58,7 +58,7 @@ uppercase constants makes design-system compilers treat them as components.
 ## Public renderer contract
 
 `@namche/metaball-react` is the component intended for the NAMCHE Brand page.
-Its main API is `Metaball3D`; it must remain independent of editor `Document`
+Its main API is `Metaball3D`; it must remain independent of Studio `Document`
 state and support more than one instance on a page. Never add a module-global
 canvas or mesh handle. Use the component ref (`Metaball3DHandle`) instead.
 
@@ -76,9 +76,9 @@ Registry releases follow [`docs/RELEASING.md`](docs/RELEASING.md). Do not run
 
 The core and renderer packages are MIT-licensed. Keep their `LICENSE` files in
 the npm artifacts. The license does not grant trademark rights in the Namche
-name or logos, and the private editor is not part of the public package grant.
+name or logos, and the private Studio is not part of the public package grant.
 
-## Editor rules
+## Studio rules
 
 - The Toolbar edits state; renderers display it. Do not read DOM controls from a
   renderer.
@@ -86,7 +86,7 @@ name or logos, and the private editor is not part of the public package grant.
 - The Namche raster is optional appearance, not part of the exported mark.
 - Expensive overlays stay opt-in and must dispose geometry, materials, timers,
   animation frames and event listeners on unmount.
-- Keep 3D code lazy-loaded so the 2D editor does not download Three.js.
+- Keep 3D code lazy-loaded so the 2D Studio does not download Three.js.
 - Keep AI/provider credentials on the server. Never expose them through
   `VITE_*`, browser state, client bundles, exported documents, or logs.
 - Treat AI material rendering as a camera-view study: browser geometry remains
@@ -94,7 +94,7 @@ name or logos, and the private editor is not part of the public package grant.
   coral, nacre, moss, fur, stone, metal, and future material families.
 - Mock paid providers in automated tests. Never spend API credits in CI.
 - Persisted document changes require a version/migration update in
-  `editor/src/lib/persistence.ts` and tests.
+  `studio/src/lib/persistence.ts` and tests.
 
 ## Brand and credits
 
@@ -104,8 +104,8 @@ UI tokens; OKEANOS/HELIOS and the raster colors are editorial/diagram colors,
 not generic product chrome.
 
 The Studio header uses two distinct generated brand assets: the transparent
-Basalt mark at `editor/public/namche-mark.svg`, and the Rhododendron avatar at
-`editor/public/favicon.svg`. Refresh both from `../design` with
+Basalt mark at `studio/public/namche-mark.svg`, and the Rhododendron avatar at
+`studio/public/favicon.svg`. Refresh both from `../design` with
 `npm run build:brand-assets`; do not reuse the coloured favicon as an in-app
 logo or redraw either path by hand.
 

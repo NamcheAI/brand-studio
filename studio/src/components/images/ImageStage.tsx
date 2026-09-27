@@ -47,7 +47,7 @@ export function ImageStage({
           <div className="p-10">
             <span className="image-kicker">Saved prompt version</span>
             <h2 className="mt-4 font-display text-3xl">Ready for a new image.</h2>
-            <p className="mt-3 text-sm text-muted-foreground">The saved settings are loaded in the editor.</p>
+            <p className="mt-3 text-sm text-muted-foreground">The saved settings are loaded in the Studio.</p>
           </div>
         ) : selected?.status === 'error' ? (
           <div className="max-w-md p-8 text-center" role="status">

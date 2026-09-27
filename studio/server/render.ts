@@ -13,7 +13,7 @@ function json(res: ServerResponse, status: number, body: unknown): void {
  * Handles `POST /api/render`: parses the already-read JSON body, calls the
  * OpenAI provider adapter, and maps `AIRenderError` to its HTTP status.
  * `app.ts` calls this AFTER its own per-client rate limit
- * (`render-rate-limit.ts`) -- the editor is public, so that limiter is the
+ * (`render-rate-limit.ts`) -- the Studio is public, so that limiter is the
  * only thing standing between a request and a paid OpenAI call.
  */
 export async function handleRenderRequest(

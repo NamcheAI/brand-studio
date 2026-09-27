@@ -23,7 +23,7 @@ function firstNumber(value: number | readonly number[]): number {
 
 /**
  * Label + numeric field over a slider. The slider scrubs on `onValueChange`
- * and commits once on `onValueCommitted`, which is what the editor's history
+ * and commits once on `onValueCommitted`, which is what the Studio's history
  * model expects: one undo step per gesture, live document updates in between.
  */
 export function SliderField({

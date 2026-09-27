@@ -1,23 +1,23 @@
 {
-  "name": "metaball",
+  "name": "namche-brand-studio",
   "private": true,
   "version": "1.0.0",
-  "description": "NAMCHE metaball brandmark generator \u2014 engine and editor",
+  "description": "NAMCHE Brand Studio \u2014 metaball engine packages and the Brand Studio app",
   "type": "module",
   "workspaces": [
     "core",
     "renderer",
     "svg",
-    "editor"
+    "studio"
   ],
   "scripts": {
-    "build": "npm run build -w @namche/metaball && npm run build -w @namche/metaball-react && npm run build -w @namche/metaball-svg && npm run build -w metaball-editor",
+    "build": "npm run build -w @namche/metaball && npm run build -w @namche/metaball-react && npm run build -w @namche/metaball-svg && npm run build -w @namche/brand-studio",
     "build:core": "npm run build -w @namche/metaball",
     "build:renderer": "npm run build:core && npm run build -w @namche/metaball-react",
-    "dev": "npm run dev -w metaball-editor",
-    "test": "npm run test -w @namche/metaball && npm run test -w @namche/metaball-react && npm run test -w @namche/metaball-svg && npm run test -w metaball-editor && npm run verify:skill-links",
-    "lint": "npm run lint -w @namche/metaball-react && npm run lint -w @namche/metaball-svg && npm run lint -w metaball-editor",
-    "typecheck": "npm run build:renderer && npm run typecheck -w metaball-editor",
+    "dev": "npm run dev -w @namche/brand-studio",
+    "test": "npm run test -w @namche/metaball && npm run test -w @namche/metaball-react && npm run test -w @namche/metaball-svg && npm run test -w @namche/brand-studio && npm run verify:skill-links",
+    "lint": "npm run lint -w @namche/metaball-react && npm run lint -w @namche/metaball-svg && npm run lint -w @namche/brand-studio",
+    "typecheck": "npm run build:renderer && npm run typecheck -w @namche/brand-studio",
     "bake": "node scripts/bake-assets.mjs",
     "sync:design": "node scripts/sync-design.mjs",
     "sync:marks": "node scripts/sync-marks.mjs",

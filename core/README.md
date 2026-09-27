@@ -25,9 +25,9 @@ component-oriented consumers do not mistake engine data for UI components.
 Full API and geometry documentation live in the repository
 [`README.md`](../README.md).
 
-Original Metaball Studio concept, design direction, and implementation by
-[Michael Marte](https://github.com/fizzybubbele) for
-[Ruhm etc.](https://ruhmetc.com/).
+Original Metaball Studio concept, design direction, and implementation
+(now NAMCHE Brand Studio) by [Michael Marte](https://github.com/fizzybubbele)
+for [Ruhm etc.](https://ruhmetc.com/).
 
 ## License
 

@@ -10,7 +10,7 @@ name: deploy
 # simplification: this app has no staging twin, so main goes straight to
 # production and there is no tag-promotion workflow.
 #
-# The editor is public, with no login or authentication gate. Its paid
+# The Studio is public, with no login or authentication gate. Its paid
 # POST /api/render route uses a per-client-IP rate limit configured by
 # RENDER_MAX_PER_HOUR (default 10; `0` disables it). TRUST_PROXY=1 enables
 # trusted X-Forwarded-For handling when a trusted reverse proxy is in front.

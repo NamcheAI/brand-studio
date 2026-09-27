@@ -1,6 +1,6 @@
 # AI material rendering
 
-Metaball Studio can turn the current 3D camera view into a high-fidelity
+NAMCHE Brand Studio can turn the current 3D camera view into a high-fidelity
 material study without attempting production surface synthesis in WebGL. It is
 a small, explicit image-model pipeline rather than a browser shader preset.
 
@@ -41,7 +41,7 @@ shape captures and a provider capable of consistent view synthesis.
 
 ## Local setup
 
-Copy `editor/.env.example` to `editor/.env.local` and add a project API key:
+Copy `studio/.env.example` to `studio/.env.local` and add a project API key:
 
 ```dotenv
 OPENAI_API_KEY=...
@@ -49,7 +49,7 @@ OPENAI_API_KEY=...
 OPENAI_IMAGE_MODEL=gpt-image-2.5-sunburst
 ```
 
-Then start the normal editor:
+Then start the normal Studio:
 
 ```bash
 npm run dev
@@ -64,8 +64,8 @@ cost guardrail.
 variables with that prefix are intentionally shipped to the browser. Production
 deployments set the same variable in the server runtime.
 
-**`/api/render` has no authentication** -- the Studio editor is a public
-deployment (see [`editor/README.md`](../editor/README.md)) and there is no PIN
+**`/api/render` has no authentication** -- the Studio is a public
+deployment (see [`studio/README.md`](../studio/README.md)) and there is no PIN
 gate in front of it any more. Anyone who can reach the deployment can call
 this endpoint and spend the configured provider's credits. The self-hosted
 server -- the only deployment target, now that the Vercel path is gone --
@@ -75,16 +75,16 @@ brake, not authentication.
 
 ## Code boundaries
 
-- `editor/lib/ai-render-contract.ts` owns provider-neutral parameters, input and
+- `studio/lib/ai-render-contract.ts` owns provider-neutral parameters, input and
   result types, validation and prompt composition.
-- `editor/lib/openai-image-render.ts` is the first server-only provider adapter.
-- `editor/server/render.ts` handles `POST /api/render`, called from
-  `editor/server/app.ts` after its per-client rate limit
-  (`editor/server/render-rate-limit.ts`).
-- `editor/vite.config.ts` exposes an equivalent endpoint during local development.
-- `editor/src/lib/aiRender.ts` captures and prepares browser images, but never
+- `studio/lib/openai-image-render.ts` is the first server-only provider adapter.
+- `studio/server/render.ts` handles `POST /api/render`, called from
+  `studio/server/app.ts` after its per-client rate limit
+  (`studio/server/render-rate-limit.ts`).
+- `studio/vite.config.ts` exposes an equivalent endpoint during local development.
+- `studio/src/lib/aiRender.ts` captures and prepares browser images, but never
   receives a provider credential.
-- `editor/src/components/AIRenderPanel.tsx` owns transient controls and result
+- `studio/src/components/AIRenderPanel.tsx` owns transient controls and result
   preview. AI results are intentionally not persisted in the Studio document.
 
 The public `@namche/metaball-react` renderer must not depend on these files or

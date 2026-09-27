@@ -7,7 +7,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 (globalThis as typeof globalThis & { React: typeof React }).React = React;
 const { default: AppCredits } = await import('../src/components/AppCredits');
 
-test('the editor credits link the repository and original design collaborators', () => {
+test('the Studio credits link the repository and original design collaborators', () => {
   const html = renderToStaticMarkup(createElement(AppCredits));
 
   assert.match(html, /https:\/\/github\.com\/NamcheAI\/metaball/);

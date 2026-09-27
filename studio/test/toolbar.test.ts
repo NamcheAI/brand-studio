@@ -209,7 +209,7 @@ test('Mark toolbar shows the Brand Studio app bar and numbered Mark steps', () =
   assert.doesNotMatch(markup, />Surface</);
   // Form | Graph moved from the app bar onto the stage.
   assert.doesNotMatch(markup, />Form</);
-  // Credits stay in the editor panel.
+  // Credits stay in the Studio panel.
   assert.match(markup, /Michael Marte/);
   assert.match(markup, /Ruhm etc\./);
 });

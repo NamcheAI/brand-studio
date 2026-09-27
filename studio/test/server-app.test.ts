@@ -44,13 +44,13 @@ test('the health check always returns ok', async () => {
   });
 });
 
-test('the editor is public: every route is reachable with no authentication', async () => {
+test('the Studio is public: every route is reachable with no authentication', async () => {
   await withServer(makeDistDir(), async (base) => {
     const root = await fetch(`${base}/`, { redirect: 'manual' });
     assert.equal(root.status, 200);
     assert.equal(await root.text(), '<html>app shell</html>');
 
-    // /studio is the editor's own route; the SPA fallback has to serve the shell.
+    // /studio is the Studio's own route; the SPA fallback has to serve the shell.
     const nested = await fetch(`${base}/studio`, { redirect: 'manual' });
     assert.equal(nested.status, 200);
     assert.equal(await nested.text(), '<html>app shell</html>');

@@ -78,7 +78,7 @@ export function useAIRenders({
   const [enhance, setEnhanceState] = useState<AIEnhanceSettings>({ ...DEFAULT_AI_ENHANCE });
   const [enhancingId, setEnhancingId] = useState<string | null>(null);
 
-  // Async results must not update state after the editor unmounts
+  // Async results must not update state after the Studio unmounts
   // (navigating away mid-render).
   const mounted = useRef(true);
   useEffect(() => {

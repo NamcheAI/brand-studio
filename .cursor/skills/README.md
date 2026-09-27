@@ -15,7 +15,7 @@ these over generic Blender / Meshy / texture-diffusion guides.
 **WORKDIR (porous coral):** `blender-handoff-new/` — see skill `metaball-porous-lattice` for lessons + file table.  
 `blender-handoff/` is the older fels rock package only.
 
-Canonical long prompts remain in `editor/docs/`:
+Canonical long prompts remain in `studio/docs/`:
 
 - `blender-texture-transfer-prompt.md`
 - `blender-materials.md`
