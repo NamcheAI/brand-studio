@@ -1,4 +1,4 @@
-import type { AIRenderQuality, AIRenderSize } from './ai-render-contract.js';
+import type { AIRenderParams, AIRenderQuality, AIRenderSize } from './ai-render-contract.js';
 
 export const imageStyles = {
   'hestia-field': {
@@ -30,17 +30,37 @@ export type ImageStudioRequest = {
   quality: AIRenderQuality;
   referenceImage?: string;
 };
-export type ImageStudy = Omit<ImageStudioRequest, 'referenceImage'> & {
+export type ImageStudy = Omit<ImageStudioRequest, 'referenceImage' | 'variant'> & {
+  variant: ImageVariant | 'metaball';
   id: string;
   createdAt: string;
-  status: 'running' | 'done' | 'error';
+  status: 'draft' | 'running' | 'done' | 'error';
+  /** Optional fields keep the first deployed history format readable. */
+  schemaVersion?: 2;
+  parentId?: string;
+  promptVersionId?: string;
+  object?: { params: AIRenderParams; document: string; shapeUrl: string };
+  assistant?: { instruction: string; previousScene: string; explanation: string; model: string };
   prompt: string;
   model?: string;
   error?: string;
   imageUrl?: string;
+  imageMime?: 'image/png' | 'image/jpeg' | 'image/webp';
+  enhancement?: { sourceId: string; scaleFactor: 2 | 4; creativity: number; resemblance: number };
   referenceUrl?: string;
 };
 
 export function buildImageStudioPrompt(input: ImageStudioRequest): string {
   return `Create one editorial photograph.\n\nSCENE\n${input.scene}\n\nART DIRECTION\n${input.style}\n\n${input.referenceImage ? 'REFERENCE IMAGE\nUse the supplied image as the subject and composition reference. Preserve its recognizable subjects, gesture and framing while applying the scene and art direction above.' : 'Compose a new image from the scene and art direction above.'}\n\nOUTPUT\nOne finished photograph. No captions, watermark, border or added branding.`;
 }
+
+export function studyLabel(study: ImageStudy): string {
+  return study.object || study.variant === 'metaball' ? '3D Metaball' : imageStyles[study.variant].name;
+}
+export type ObjectStudyRequest = {
+  params: AIRenderParams;
+  document: string;
+  shapeImage: string;
+  materialImage?: string | null;
+  parentId?: string;
+};

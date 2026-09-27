@@ -41,6 +41,7 @@ export function createRequestListener(options: AppOptions = {}): RequestListener
   const distDir = options.distDir ?? DEFAULT_DIST_DIR;
   // Spending guard, not authentication: the editor is public, but a render
   // is a paid provider call whenever OPENAI_API_KEY is configured.
+  const draftLimiter = createRenderRateLimiter(120);
   const renderLimiter = createRenderRateLimiter(renderRateLimitBudget());
   const trustProxy = renderRateLimitTrustProxy();
   const renderJobs = new RenderJobStore();
@@ -80,8 +81,8 @@ export function createRequestListener(options: AppOptions = {}): RequestListener
       }
 
       if (pathname === '/api/images' || pathname.startsWith('/api/images/')) {
-        if (pathname === '/api/images/jobs' && req.method === 'POST') {
-          const verdict = renderLimiter.take(renderRateLimitKey(req, trustProxy));
+        if (pathname.startsWith('/api/images/') && req.method === 'POST') {
+          const verdict = (pathname === '/api/images/drafts' ? draftLimiter : renderLimiter).take(renderRateLimitKey(req, trustProxy));
           if (!verdict.allowed) {
             res.setHeader('Retry-After', String(verdict.retryAfterSeconds));
             sendJson(res, 429, { error: 'Render rate limit reached. Try again later.' });

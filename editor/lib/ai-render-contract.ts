@@ -106,6 +106,7 @@ export type AIRenderRequest = {
 };
 
 export type AIRenderResult = {
+  assetId?: string;
   image: string;
   model: string;
   prompt: string;

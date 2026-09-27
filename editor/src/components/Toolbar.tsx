@@ -1,3 +1,4 @@
+import type { ImageStudy } from '../../lib/image-studio-contract';
 import { useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
 
@@ -185,6 +186,9 @@ type Props = {
   onExportJson: () => void;
   onExportGlb: () => void;
   onExportBlenderHandoff: () => void;
+  restoredRender?: { id: string; params: AIRenderParams };
+  onApplyAIPrompt: (study: ImageStudy) => void;
+  onSaveAIPrompt: (params: AIRenderParams) => Promise<ImageStudy>;
   canAIRender: boolean;
   onAIRender: (params: AIRenderParams) => Promise<AIRenderResult>;
   onSuggestMetamorph: () => Promise<AISuggestResult>;
@@ -354,6 +358,9 @@ export default function Toolbar({
   onExportJson,
   onExportGlb,
   onExportBlenderHandoff,
+  restoredRender,
+  onSaveAIPrompt,
+  onApplyAIPrompt,
   canAIRender,
   onAIRender,
   onSuggestMetamorph,
@@ -1048,6 +1055,12 @@ export default function Toolbar({
                 <Section value="ai" title="AI material render">
                   <AIRenderPanel
                     canRender={canAIRender}
+                    restoredRender={restoredRender}
+                    onSavePrompt={onSaveAIPrompt}
+                    onApplyPrompt={onApplyAIPrompt}
+                    sceneLighting={sceneLighting}
+                    sceneBackground={sceneBackground}
+                    sceneCanvas={sceneCanvas}
                     referenceName={refImageName}
                     textureSlug={textureSlug}
                     onAttachReference={onAttachRefImageClick}
