@@ -7,7 +7,7 @@ NAMCHE Metaball has three layers. The dependency direction is one-way:
               ↓
 @namche/metaball-react (embeddable 3D viewer)
               ↓
-Metaball Studio (authoring UI and advanced workflows)
+NAMCHE Brand Studio (authoring UI and advanced workflows)
 ```
 
 ## Core — `@namche/metaball`
@@ -15,7 +15,7 @@ Metaball Studio (authoring UI and advanced workflows)
 Dependency-free TypeScript for deterministic nodes, edges, presets, 2D
 rasterization, tracing and SVG output. It is the source of truth for the
 Namche Loop and other canonical graphs. It does not know about React, Three.js,
-the editor, materials or browser UI.
+the Studio, materials or browser UI.
 
 ## Renderer — `@namche/metaball-react`
 
@@ -24,10 +24,10 @@ a Three.js Marching Cubes field, frames the camera and applies a lightweight
 physical material. It owns its canvas and all disposable Three.js resources.
 
 The renderer intentionally exposes a small API: shape, material, background,
-interaction, rotation, quality and sizing. It has no editor toolbar, persistence,
+interaction, rotation, quality and sizing. It has no Studio toolbar, persistence,
 liquid controls, surface sampler, export workflow or global live-mesh singleton.
 
-## Studio — `editor/`
+## Studio — `studio/`
 
 The application layer. It owns the `Document`, history, persistence, 2D graph
 authoring, motion, liquid looks, surface sampling, AI material studies,
@@ -39,7 +39,7 @@ GLB/PNG/SVG/JSON export and Blender handoff. `Metaball3DPreview` is an adapter:
 
 The separate `/studio/images` entry point creates Hestia field, Filter and
 Close-up image studies. Its provider and durable, browser-private history live
-in `editor/lib/` and `editor/server/`; image studies are independent of the
+in `studio/lib/` and `studio/server/`; image studies are independent of the
 Metaball `Document`. The shared `/studio/library` pairs immutable prompt versions
 with image and 3D render outputs. 3D assets contain a serialized Document and
 camera/reference captures, while core and the public renderer remain unaware of
@@ -60,7 +60,7 @@ map. See [`AI_RENDERING.md`](AI_RENDERING.md).
   where export fidelity matters.
 - Static material views render on demand. Auto-rotation, host-driven Studio
   motion and liquid render continuously.
-- Marching Cubes fields may debounce rapid editor updates.
+- Marching Cubes fields may debounce rapid Studio updates.
 - Every Three.js allocation, timer and animation frame must be disposed or
   cancelled on unmount.
 
@@ -68,6 +68,6 @@ map. See [`AI_RENDERING.md`](AI_RENDERING.md).
 
 Add a new canonical shape in `core/src/presets.ts`. Add a broadly reusable
 physical material in `renderer/src/materials.ts`. Add experimental looks,
-editor-only switches, provider-backed image generation and export workflows in
-`editor/`. If a feature needs the whole Studio `Document`, a private credential
+Studio-only switches, provider-backed image generation and export workflows in
+`studio/`. If a feature needs the whole Studio `Document`, a private credential
 or a paid API, it is not part of the public renderer API.

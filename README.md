@@ -1,7 +1,7 @@
 # Metaball Generator
 
-The engine behind the NAMCHE brandmark vocabulary, plus the editor for making
-marks with it.
+The engine behind the NAMCHE brandmark vocabulary, plus the Brand Studio for
+making marks with it.
 
 Nodes sit on a grid and are drawn as circles; connections between them are
 drawn as capsules. The union is blurred and re-thresholded, which pulls
@@ -10,9 +10,9 @@ expressed as a computation.
 
 ```bash
 npm install
-npm run dev      # the editor
+npm run dev      # the Studio
 npm test         # engine + studio features
-npm run lint     # editor
+npm run lint     # the Studio
 ```
 
 ## What is where
@@ -21,23 +21,23 @@ npm run lint     # editor
 | --------------- | ---------------------------------------------------------------------------- |
 | `core/`         | `@namche/metaball` — the engine. Dependency-free, deterministic, TypeScript. |
 | `renderer/`     | `@namche/metaball-react` — embeddable React/Three.js Brand-page viewer.      |
-| `editor/`       | Metaball Studio: 2D authoring, live 3D, AI material studies, and export.     |
+| `studio/`       | NAMCHE Brand Studio: 2D authoring, live 3D, AI material studies, and export. |
 | `assets/marks/` | The canonical marks, baked to SVG + JSON.                                    |
 | `scripts/`      | `bake-assets.mjs`, `sync-design.mjs`.                                        |
 
-The editor imports the engine — there is one implementation of the geometry,
-not two. A change to how marks are drawn shows up in the editor, in the baked
+The Studio imports the engine — there is one implementation of the geometry,
+not two. A change to how marks are drawn shows up in the Studio, in the baked
 assets and in the design system together, or not at all.
 
 The normal 3D material view also runs through the public renderer package.
 Studio adds its advanced liquid, surface-sampler, AI material-render and export
-workflows around that component rather than exposing the editor document as a public API.
+workflows around that component rather than exposing the Studio document as a public API.
 See [`renderer/README.md`](renderer/README.md) for Brand-page integration and
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the dependency boundaries.
 
-### Metaball Studio
+### NAMCHE Brand Studio
 
-The editor turns the same authored node graph into several non-destructive
+The Studio turns the same authored node graph into several non-destructive
 views:
 
 - the canonical 2D graph/metaball renderer and flattened SVG/PNG export;
@@ -47,7 +47,7 @@ views:
 - GLB export and a Blender handoff bundle with preview and material reference.
 
 Three.js is loaded only when the 3D view is opened. Studio-only settings extend
-the editor document, while nodes, edges, necks, blur, contrast, and pinch always
+the Studio document, while nodes, edges, necks, blur, contrast, and pinch always
 map back through `@namche/metaball`.
 
 ## Using the engine
@@ -77,9 +77,9 @@ exports such as `generate` and all type exports remain at the package root.
 With no parameters, `generate()` returns the current Namche `loop` mark.
 The legacy `brandmark` preset keeps its approved silhouette as a golden vector,
 fitted to the same inner authoring frame as Loop and R, and carries the matching
-editable five-node graph used by Metaball Studio. `ENGINE.BRANDMARK_PATH`
+editable five-node graph used by NAMCHE Brand Studio. `ENGINE.BRANDMARK_PATH`
 remains the unframed official asset path for brand-asset generation;
-`ENGINE.BRANDMARK_PRESET_PATH` is its editor-safe framed counterpart.
+`ENGINE.BRANDMARK_PRESET_PATH` is its Studio-safe framed counterpart.
 
 Give it a `preset`, an explicit `nodes`/`edges` spec, or a `seed` — in that
 order of precedence. The same input always produces the same path, so baked
@@ -120,7 +120,7 @@ Tracing needs a blurred coverage field. There are two ways to get one, and
 `generate` picks automatically (`backend: 'auto'`):
 
 - **canvas** — browser only, fast, and the reference these marks were designed
-  against. Used for the editor's live preview and export.
+  against. Used for the Studio's live preview and export.
 - **pure** — signed-distance rasterization plus the SVG spec's three-box-blur
   approximation of a Gaussian. No DOM, so it runs in Node, in CI and in
   workers. This is what bakes the static assets.
@@ -136,7 +136,7 @@ npm run bake
 ```
 
 Writes `assets/marks/metaball-<id>.svg` and a matching `.json` spec for every
-canonical mark. The SVG is what consumers use; the JSON re-opens in the editor,
+canonical mark. The SVG is what consumers use; the JSON re-opens in the Studio,
 so a mark is never a dead end. Commit both — an unexpected diff here is the
 review signal that a shape moved.
 
@@ -167,7 +167,7 @@ are build artefacts that happen to be committed.
 
 ## Provenance
 
-The editor was reconstructed from a deployed production bundle (no sourcemaps)
+The Studio was reconstructed from a deployed production bundle (no sourcemaps)
 and verified against it: for an identical document, the rendered canvas SVG and
 the flatten export path matched byte for byte. That parity is why the canvas
 backend is kept — it is the reference the existing marks were drawn against.
@@ -183,9 +183,9 @@ Two deliberate departures from the original:
 
 ## Credits
 
-The original Metaball Studio concept, design direction, and implementation are
-by [Michael Marte](https://github.com/fizzybubbele) for
-[Ruhm etc.](https://ruhmetc.com/).
+The original Metaball Studio concept, design direction, and implementation
+(now NAMCHE Brand Studio) are by [Michael Marte](https://github.com/fizzybubbele)
+for [Ruhm etc.](https://ruhmetc.com/).
 
 The production-bundle reconstruction, canonical engine extraction, renderer
 package architecture, and ongoing integration are maintained by the NAMCHE
@@ -201,6 +201,6 @@ available under the [MIT License](core/LICENSE). Their package distributions
 retain the license and the contributor credits above.
 
 The Namche name and logos remain Namche trademarks. The MIT License does not
-grant trademark rights or permission to imply endorsement. The editor
+grant trademark rights or permission to imply endorsement. The Studio
 application remains private and is not part of the public package license. The
 SIL Open Font License used by Namche Shadow applies to the fonts only.

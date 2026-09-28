@@ -1,5 +1,19 @@
 # Changelog
 
+## `@namche/brand-studio` — Unreleased
+
+- Rename the app from Metaball Studio to **NAMCHE Brand Studio**, moving the
+  workspace from `editor/` to `studio/` and the npm workspace package from
+  `metaball-editor` to `@namche/brand-studio`. The public `@namche/metaball`,
+  `@namche/metaball-react` and `@namche/metaball-svg` packages, their folders,
+  and the metaball geometry itself are unchanged.
+- Restructure the UI around the main flows: a tab per flow (Mark, Object,
+  Images, Library) under a shared app bar, a File menu, a persistent playback
+  bar, generated renders shown on stage, and Expert sections for advanced
+  controls.
+- Migrate the persisted document's storage key for the new structure; see
+  `studio/src/lib/persistence.ts` for the version bump and migration.
+
 ## `@namche/metaball` 2.0.0 — Unreleased
 
 - **Breaking:** Replace loose uppercase root exports with the frozen `ENGINE`

@@ -45,7 +45,7 @@ for (const id of CANONICAL) {
   const file = resolve(outDir, `metaball-${id}.svg`)
   await writeFile(file, svg + '\n', 'utf8')
 
-  // The spec next to the shape, so a mark can be re-opened in the editor.
+  // The spec next to the shape, so a mark can be re-opened in the Studio.
   const spec = { preset: id, nodes: preset.nodes, edges: preset.edges, version: 1 }
   await writeFile(
     resolve(outDir, `metaball-${id}.json`),

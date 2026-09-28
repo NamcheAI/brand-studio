@@ -18,11 +18,11 @@ Execute the staged material transfer in Blender via MCP. Do not only describe it
 
 Read and follow the full prompt (placeholders + every stage CHECK):
 
-- [editor/docs/blender-texture-transfer-prompt.md](../../../editor/docs/blender-texture-transfer-prompt.md)
+- [studio/docs/blender-texture-transfer-prompt.md](../../../studio/docs/blender-texture-transfer-prompt.md)
 
 Optional look tuning (not the default export path):
 
-- [editor/docs/blender-materials.md](../../../editor/docs/blender-materials.md)
+- [studio/docs/blender-materials.md](../../../studio/docs/blender-materials.md)
 
 SurfaceDriver Factor contract (geometry ↔ shading):
 
@@ -38,7 +38,7 @@ SurfaceDriver Factor contract (geometry ↔ shading):
 
 After materials pass, beauty stills / turntables are separate skills:
 
-- [editor/docs/blender-render-style-prompt.md](../../../editor/docs/blender-render-style-prompt.md)
+- [studio/docs/blender-render-style-prompt.md](../../../studio/docs/blender-render-style-prompt.md)
 - Skills `metaball-beauty-cam`, `metaball-diffgrow` (optional organic pass), `metaball-stablegen` (optional photographic bake — not default)
 
 ## Placeholders

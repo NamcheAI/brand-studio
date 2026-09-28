@@ -1,7 +1,7 @@
 # `@namche/metaball-react`
 
 Embeddable React/Three.js renderer for NAMCHE metaball marks. It defaults to
-the current **Namche Loop**, has no editor state or stylesheet dependency, and
+the current **Namche Loop**, has no Studio state or stylesheet dependency, and
 supports multiple independent instances on one page.
 
 ## React / Vite
@@ -84,9 +84,9 @@ Package releases use the repository's trusted-publishing workflow. See
 
 ## Credits
 
-Original Metaball Studio concept, design direction, and implementation by
-[Michael Marte](https://github.com/fizzybubbele) for
-[Ruhm etc.](https://ruhmetc.com/). Package extraction and engineering are by
+Original Metaball Studio concept, design direction, and implementation
+(now NAMCHE Brand Studio) by [Michael Marte](https://github.com/fizzybubbele)
+for [Ruhm etc.](https://ruhmetc.com/). Package extraction and engineering are by
 the NAMCHE contributors listed in the repository `AUTHORS.txt` and
 `CONTRIBUTORS.txt`.
 

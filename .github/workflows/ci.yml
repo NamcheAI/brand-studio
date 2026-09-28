@@ -18,13 +18,13 @@ jobs:
 
       - run: npm ci
 
-      - name: Build engine and editor
+      - name: Build engine and studio
         run: npm run build
 
-      - name: Lint editor
+      - name: Lint studio
         run: npm run lint
 
-      - name: Test engine and editor
+      - name: Test engine and studio
         run: npm test
 
       # The baked marks are committed so consumers can use them without
