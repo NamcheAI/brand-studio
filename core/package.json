@@ -4,11 +4,11 @@
   "description": "Metaball brandmark engine — deterministic node/edge marks as SVG paths",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/NamcheAI/metaball.git",
+    "url": "git+https://github.com/NamcheAI/brand-studio.git",
     "directory": "core"
   },
-  "homepage": "https://github.com/NamcheAI/metaball#readme",
-  "bugs": "https://github.com/NamcheAI/metaball/issues",
+  "homepage": "https://github.com/NamcheAI/brand-studio#readme",
+  "bugs": "https://github.com/NamcheAI/brand-studio/issues",
   "contributors": [
     { "name": "Michael Marte", "url": "https://github.com/fizzybubbele" },
     { "name": "Ruhm GmbH", "url": "https://ruhmetc.com/" },

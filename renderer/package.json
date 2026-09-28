@@ -4,11 +4,11 @@
   "description": "Embeddable React and Three.js renderer for NAMCHE metaball marks",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/NamcheAI/metaball.git",
+    "url": "git+https://github.com/NamcheAI/brand-studio.git",
     "directory": "renderer"
   },
-  "homepage": "https://github.com/NamcheAI/metaball/tree/main/renderer#readme",
-  "bugs": "https://github.com/NamcheAI/metaball/issues",
+  "homepage": "https://github.com/NamcheAI/brand-studio/tree/main/renderer#readme",
+  "bugs": "https://github.com/NamcheAI/brand-studio/issues",
   "contributors": [
     { "name": "Michael Marte", "url": "https://github.com/fizzybubbele" },
     { "name": "Ruhm GmbH", "url": "https://ruhmetc.com/" },

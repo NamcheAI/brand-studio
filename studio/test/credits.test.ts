@@ -10,7 +10,7 @@ const { default: AppCredits } = await import('../src/components/AppCredits');
 test('the Studio credits link the repository and original design collaborators', () => {
   const html = renderToStaticMarkup(createElement(AppCredits));
 
-  assert.match(html, /https:\/\/github\.com\/NamcheAI\/metaball/);
+  assert.match(html, /https:\/\/github\.com\/NamcheAI\/brand-studio/);
   assert.match(html, /https:\/\/github\.com\/fizzybubbele/);
   assert.match(html, /https:\/\/ruhmetc\.com\//);
   assert.match(html, /Michael Marte/);
