@@ -19,7 +19,7 @@
   "sideEffects": false,
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/NamcheAI/metaball.git",
+    "url": "git+https://github.com/NamcheAI/brand-studio.git",
     "directory": "svg"
   },
   "keywords": [

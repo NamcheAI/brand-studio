@@ -28,6 +28,13 @@ one bootstrap publish by a NAMCHE npm owner:
 4. Delete `NPM_BOOTSTRAP_TOKEN` and remove the temporary environment entry;
    all later publishes use GitHub OIDC.
 
+The repository was renamed from `NamcheAI/metaball` to `NamcheAI/brand-studio`
+on 2026-09-28. npm binds a trusted publisher to the repository name, so each
+package's trusted publisher on npmjs.com (package → Settings → Trusted
+publishing) must name `NamcheAI/brand-studio` and
+`.github/workflows/release-packages.yml` before the next release; provenance
+also requires the packages' `repository.url` to match, which it now does.
+
 This bootstrap was completed on 2026-08-19. Do not recreate the secret during
 normal releases. Repeat these steps only when introducing a new npm package
 name that cannot yet be assigned a trusted publisher.
