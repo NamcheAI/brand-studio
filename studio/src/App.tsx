@@ -18,6 +18,8 @@ import { Segmented } from './components/toolbar/segmented';
 import { PlaybackBar, type Playback } from './components/stage/PlaybackBar';
 import { RenderBar, RenderOverlay, RenderViewSwitch } from './components/stage/RenderStage';
 import { Stage, StageChip } from './components/stage/Stage';
+import { Stage3DErrorBoundary } from './components/stage/Stage3DErrorBoundary';
+import { classifyStageError } from './lib/stageErrors';
 import { useAIRenders } from './lib/useAIRenders';
 import { Toaster } from '@/components/ui/sonner';
 import { copySvgToClipboard, exportPng, exportSvg, type FlattenSpec } from './lib/export';
@@ -81,7 +83,7 @@ import type { AIRenderParams, AIRenderResult } from '../lib/ai-render-contract';
 
 // Loaded on demand: keeps three.js / react-three-fiber out of the initial
 // bundle for users who only ever use the 2D editor.
-const Metaball3DPreview = lazy(() => import('./components/Metaball3DPreview'));
+const loadMetaball3DPreview = () => import('./components/Metaball3DPreview');
 
 const SIZE_KEYS: Record<string, Size> = {
   '1': 'S',
@@ -102,6 +104,11 @@ function refImageExtension(mime: string): string {
 type ViewMode = '2d' | '3d';
 
 export default function App({ initialView = '2d' }: { initialView?: ViewMode } = {}) {
+  // React.lazy caches a rejected import forever; Retry swaps in a fresh one.
+  const [Metaball3DPreview, setMetaball3DPreview] = useState(() => lazy(loadMetaball3DPreview));
+  const retry3dStage = useCallback((error: unknown) => {
+    if (classifyStageError(error) === 'module') setMetaball3DPreview(() => lazy(loadMetaball3DPreview));
+  }, []);
   const [history, setHistory] = useState<HistoryState>(() =>
     // Only a first-ever document follows the interface into the dark; after
     // that the canvas theme is the document's own, switched from Appearance.
@@ -1241,26 +1248,32 @@ export default function App({ initialView = '2d' }: { initialView?: ViewMode } =
           overlay={view === '3d' ? <RenderOverlay session={ai} /> : null}
         >
           {view === '3d' ? (
-            <Suspense
-              fallback={
-                <div className="flex size-full items-center justify-center gap-2 font-mono text-xs tracking-wide text-muted-foreground uppercase">
-                  <Loader2Icon className="size-4 animate-spin" />
-                  Loading 3D…
-                </div>
-              }
+            <Stage3DErrorBoundary
+              lookMode={doc.lookMode}
+              onRetry={retry3dStage}
+              onUseOrganic={() => updateDocField('lookMode', 'material')}
             >
-              {/* Stays mounted under a shown render: AI renders capture this
-                  canvas, and switching back to Live 3D must be instant. */}
-              <Metaball3DPreview
-                doc={displayDoc}
-                meshRef={mesh3dRef}
-                canvasHandleRef={canvas3dHandleRef}
-                // Playback state is already capped at 30 fps. Rebuild immediately for each
-                // emitted state so a trailing debounce cannot be starved by the same cadence.
-                fieldDebounceMs={growing || activeMotion !== null ? 0 : undefined}
-                continuous={activeMotion !== null || doc.lookMode === 'liquid'}
-              />
-            </Suspense>
+              <Suspense
+                fallback={
+                  <div className="flex size-full items-center justify-center gap-2 font-mono text-xs tracking-wide text-muted-foreground uppercase">
+                    <Loader2Icon className="size-4 animate-spin" />
+                    Loading 3D…
+                  </div>
+                }
+              >
+                {/* Stays mounted under a shown render: AI renders capture this
+                    canvas, and switching back to Live 3D must be instant. */}
+                <Metaball3DPreview
+                  doc={displayDoc}
+                  meshRef={mesh3dRef}
+                  canvasHandleRef={canvas3dHandleRef}
+                  // Playback state is already capped at 30 fps. Rebuild immediately for each
+                  // emitted state so a trailing debounce cannot be starved by the same cadence.
+                  fieldDebounceMs={growing || activeMotion !== null ? 0 : undefined}
+                  continuous={activeMotion !== null || doc.lookMode === 'liquid'}
+                />
+              </Suspense>
+            </Stage3DErrorBoundary>
           ) : (
             <MetaballCanvas
               ref={svgRef}

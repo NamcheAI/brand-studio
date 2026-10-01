@@ -1,7 +1,6 @@
-import { ContactShadows, Environment, OrbitControls } from '@react-three/drei';
+import { ContactShadows, OrbitControls } from '@react-three/drei';
 import { Canvas, useThree } from '@react-three/fiber';
 import {
-  Suspense,
   forwardRef,
   useCallback,
   useEffect,
@@ -16,6 +15,7 @@ import * as THREE from 'three';
 import { MarchingCubes } from 'three/examples/jsm/objects/MarchingCubes.js';
 import { fitPreviewCameraDistance } from './camera.js';
 import { updateMarchingCubesField } from './field.js';
+import { StudioEnvironment } from './environment.js';
 import { createMaterial, materialNeedsEnvironment, type MaterialInput } from './materials.js';
 import { resolveMetaballShape, type MetaballShape, type ResolvedMetaballShape } from './shape.js';
 import {
@@ -56,6 +56,11 @@ export type Metaball3DProps = {
   /** Optional triplanar-projected texture layered over the material. */
   texture?: Metaball3DTexture;
   background?: THREE.ColorRepresentation;
+  /**
+   * Self-hosted equirectangular HDR/EXR for reflective and transmissive
+   * materials. Defaults to drei's `studio` preset, loaded from a public CDN.
+   */
+  environmentUrl?: string;
   interactive?: boolean;
   /** Keep the render loop active for host-driven animation without rotating the camera. */
   renderContinuously?: boolean;
@@ -242,6 +247,7 @@ function Scene({
   material,
   texture,
   background,
+  environmentUrl,
   interactive,
   autoRotate,
   autoRotateSpeed,
@@ -254,6 +260,7 @@ function Scene({
   material: MaterialInput;
   texture?: Metaball3DTexture;
   background: THREE.ColorRepresentation;
+  environmentUrl?: string;
   interactive: boolean;
   autoRotate: boolean;
   autoRotateSpeed: number;
@@ -284,9 +291,7 @@ function Scene({
         onReady={onReady}
         onBoundsChange={updateBounds}
       />
-      <Suspense fallback={null}>
-        {needsEnvironment && <Environment preset="studio" environmentIntensity={0.95} />}
-      </Suspense>
+      {needsEnvironment && <StudioEnvironment url={environmentUrl} intensity={0.95} />}
       <ContactShadows position={[0, -0.78, 0]} opacity={0.32} scale={6} blur={2.2} far={2.8} resolution={256} color="#1a1a1e" />
       <CameraControls
         objectRadius={objectRadius}
@@ -305,6 +310,7 @@ export const Metaball3D = forwardRef<Metaball3DHandle, Metaball3DProps>(function
     material = 'wax',
     texture,
     background = '#f0f2f5',
+    environmentUrl,
     interactive = true,
     renderContinuously = false,
     autoRotate = false,
@@ -346,6 +352,7 @@ export const Metaball3D = forwardRef<Metaball3DHandle, Metaball3DProps>(function
           material={material}
           texture={texture}
           background={background}
+          environmentUrl={environmentUrl}
           interactive={interactive}
           autoRotate={autoRotate}
           autoRotateSpeed={autoRotateSpeed}
