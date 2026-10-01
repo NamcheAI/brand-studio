@@ -827,13 +827,17 @@ function PrismPostFx({
 }
 
 /**
- * The loader cache keeps a rejected HDR request forever, so drop it and hand
- * the error to the DOM side, where the Studio's stage boundary shows it; Retry
- * then fetches again. Clearing must wait for the commit: React re-renders once
- * after an error, and an empty cache there would start a new fetch every time.
+ * The loader cache keeps a rejected HDR request forever, so drop it; a later
+ * mount (Retry, or a look switch, which remounts this boundary) then fetches
+ * again. Clearing must wait for the commit: React re-renders once after an
+ * error, and an empty cache there would start a new fetch every time.
+ *
+ * With `onError` the failure goes to the Studio's stage boundary (Liquid needs
+ * the environment). Without it the scene renders without reflections, like the
+ * public renderer, so the Organic fallback cannot fail on the same request.
  */
 class EnvironmentErrorBoundary extends Component<
-  { onError: (error: unknown) => void; children: ReactNode },
+  { onError?: (error: unknown) => void; children: ReactNode },
   { failed: boolean }
 > {
   state = { failed: false };
@@ -844,7 +848,8 @@ class EnvironmentErrorBoundary extends Component<
 
   componentDidCatch(error: unknown) {
     useEnvironment.clear({ files: STUDIO_ENVIRONMENT_URL });
-    this.props.onError(error);
+    if (this.props.onError) this.props.onError(error);
+    else console.warn('Studio: environment map failed to load; rendering without reflections.', error);
   }
 
   render() {
@@ -886,7 +891,10 @@ function Scene({
         fieldDebounceMs={fieldDebounceMs}
         onBoundsChange={handleBoundsChange}
       />
-      <EnvironmentErrorBoundary onError={onEnvironmentError}>
+      <EnvironmentErrorBoundary
+        key={doc.lookMode}
+        onError={isLiquid ? onEnvironmentError : undefined}
+      >
         <Suspense fallback={null}>
           {showEnv && (
             <Environment
