@@ -7,7 +7,12 @@ import { Component, Suspense, type ReactNode } from 'react';
  * the old network error instead of fetching again.
  */
 export function clearEnvironmentCache(url?: string): void {
-  useEnvironment.clear(url ? { files: url } : { preset: 'studio' });
+  try {
+    useEnvironment.clear(url ? { files: url } : { preset: 'studio' });
+  } catch {
+    // drei rejects URLs it has no loader for (e.g. no file extension); those
+    // never reached the cache, and the fallback must not throw on cleanup.
+  }
 }
 
 class EnvironmentBoundary extends Component<
