@@ -1,4 +1,5 @@
 import {
+  Component,
   Suspense,
   useCallback,
   useEffect,
@@ -7,6 +8,7 @@ import {
   useRef,
   useState,
   type MutableRefObject,
+  type ReactNode,
 } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import {
@@ -15,6 +17,7 @@ import {
   Environment,
   MeshTransmissionMaterial,
   OrbitControls,
+  useEnvironment,
 } from '@react-three/drei';
 import { Bloom, ChromaticAberration, EffectComposer } from '@react-three/postprocessing';
 import {
@@ -42,6 +45,9 @@ import {
 import { getLiquidBackdrop, type LiquidBackdrop } from '../lib/liquidBackdrops';
 import { SURFACE_SAMPLER_COUNT_MAX, type Document } from '../lib/model';
 import { sampleMarchingCubesSurface, type SurfaceSample } from '../lib/surfaceSampler';
+// Bundled so Studio reflections never depend on drei's CDN. Imported here, in
+// the lazy 3D chunk, so the 2D Studio never fetches it. CC0, see assets/hdri.
+import STUDIO_ENVIRONMENT_URL from '../assets/hdri/studio_small_03_1k.hdr?url';
 
 type Props = {
   doc: Document;
@@ -169,6 +175,8 @@ function MetaballMesh({
     () => new MarchingCubes(MC_RESOLUTION, new THREE.MeshPhysicalMaterial(), false, false, 350000),
     [],
   );
+  // Swapped out by the preset / transmission material; disposed with the mesh.
+  const initialMaterial = useMemo(() => mc.material as THREE.Material, [mc]);
 
   const points = useMemo(() => {
     const geo = new THREE.BufferGeometry();
@@ -213,13 +221,14 @@ function MetaballMesh({
     () => () => {
       if (animRafRef.current !== null) window.cancelAnimationFrame(animRafRef.current);
       mc.geometry.dispose();
+      initialMaterial.dispose();
       points.geometry.dispose();
       (points.material as THREE.Material).dispose();
       spheres.geometry.dispose();
       (spheres.material as THREE.Material).dispose();
       spheres.dispose();
     },
-    [mc, points, spheres],
+    [mc, initialMaterial, points, spheres],
   );
 
   const isLiquid = doc.lookMode === 'liquid';
@@ -817,7 +826,39 @@ function PrismPostFx({
   );
 }
 
-function Scene({ doc, meshRef, canvasHandleRef, fieldDebounceMs }: Props) {
+/**
+ * The loader cache keeps a rejected HDR request forever, so drop it and hand
+ * the error to the DOM side, where the Studio's stage boundary shows it; Retry
+ * then fetches again. Clearing must wait for the commit: React re-renders once
+ * after an error, and an empty cache there would start a new fetch every time.
+ */
+class EnvironmentErrorBoundary extends Component<
+  { onError: (error: unknown) => void; children: ReactNode },
+  { failed: boolean }
+> {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  componentDidCatch(error: unknown) {
+    useEnvironment.clear({ files: STUDIO_ENVIRONMENT_URL });
+    this.props.onError(error);
+  }
+
+  render() {
+    return this.state.failed ? null : this.props.children;
+  }
+}
+
+function Scene({
+  doc,
+  meshRef,
+  canvasHandleRef,
+  fieldDebounceMs,
+  onEnvironmentError,
+}: Props & { onEnvironmentError: (error: unknown) => void }) {
   const [objectRadius, setObjectRadius] = useState(1.2);
   const handleBoundsChange = useCallback((radius: number) => {
     if (!Number.isFinite(radius) || radius <= 0) return;
@@ -845,14 +886,16 @@ function Scene({ doc, meshRef, canvasHandleRef, fieldDebounceMs }: Props) {
         fieldDebounceMs={fieldDebounceMs}
         onBoundsChange={handleBoundsChange}
       />
-      <Suspense fallback={null}>
-        {showEnv && (
-          <Environment
-            preset="studio"
-            environmentIntensity={isLiquid ? 0.28 + doc.liquidParams.transmission * 0.22 : 0.95}
-          />
-        )}
-      </Suspense>
+      <EnvironmentErrorBoundary onError={onEnvironmentError}>
+        <Suspense fallback={null}>
+          {showEnv && (
+            <Environment
+              files={STUDIO_ENVIRONMENT_URL}
+              environmentIntensity={isLiquid ? 0.28 + doc.liquidParams.transmission * 0.22 : 0.95}
+            />
+          )}
+        </Suspense>
+      </EnvironmentErrorBoundary>
       <ContactShadows
         position={[0, -0.78, 0]}
         opacity={isLiquid ? 0.1 + (1 - doc.liquidParams.transmission) * 0.14 : 0.32}
@@ -908,6 +951,7 @@ function PublicMaterialPreview({
       material={getMaterialPreset(doc.materialPreset).id}
       texture={textureForSlug(doc.textureSlug, doc.textureScale, doc.textureAmount)}
       background="#ececf0"
+      environmentUrl={STUDIO_ENVIRONMENT_URL}
       quality="high"
       renderContinuously={continuous}
       updateDebounceMs={fieldDebounceMs}
@@ -925,6 +969,8 @@ export default function Metaball3DPreview({
 }: Props) {
   const fallbackRef = useRef<MarchingCubes | null>(null);
   const isLiquid = doc.lookMode === 'liquid';
+  // Rethrown here, outside the R3F tree, so the Studio's stage boundary catches it.
+  const [environmentError, setEnvironmentError] = useState<{ error: unknown } | null>(null);
 
   useEffect(() => {
     return () => {
@@ -932,6 +978,8 @@ export default function Metaball3DPreview({
       if (canvasHandleRef) canvasHandleRef.current = null;
     };
   }, [canvasHandleRef]);
+
+  if (environmentError) throw environmentError.error;
 
   if (!isLiquid && !doc.surfaceSamplerEnabled) {
     return (
@@ -974,6 +1022,7 @@ export default function Metaball3DPreview({
         meshRef={meshRef ?? fallbackRef}
         canvasHandleRef={canvasHandleRef}
         fieldDebounceMs={fieldDebounceMs}
+        onEnvironmentError={(error) => setEnvironmentError({ error })}
       />
     </Canvas>
   );

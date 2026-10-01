@@ -13,6 +13,10 @@
   controls.
 - Migrate the persisted document's storage key for the new structure; see
   `studio/src/lib/persistence.ts` for the version bump and migration.
+- Bundle the studio HDR (Poly Haven Studio Small 03, CC0) so Liquid and the
+  reflective Organic materials work without drei's CDN. A 3D stage that fails
+  to load now shows an inline message with Retry and, for Liquid, a switch to
+  the Organic look, instead of blanking the app.
 
 ## `@namche/metaball` 2.0.0 — Unreleased
 
@@ -28,8 +32,11 @@
 
 ## `@namche/metaball-react` 0.2.0 — Unreleased
 
-- Consume the namespaced `@namche/metaball` 2.x data API. The renderer's own
-  public component API is unchanged.
+- Consume the namespaced `@namche/metaball` 2.x data API.
+- Add an optional `environmentUrl` prop so hosts can self-host the studio HDR
+  instead of loading drei's CDN preset.
+- A failed environment-map request now renders the mark without reflections
+  instead of throwing out of the canvas and unmounting the host page.
 
 ## `@namche/metaball` 1.0.0 — 2026-08-19
 

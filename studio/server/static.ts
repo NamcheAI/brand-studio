@@ -20,6 +20,7 @@ const MIME_TYPES: Record<string, string> = {
   '.txt': 'text/plain; charset=utf-8',
   '.map': 'application/json; charset=utf-8',
   '.glb': 'model/gltf-binary',
+  '.hdr': 'image/vnd.radiance',
 };
 
 function contentTypeFor(filePath: string): string {

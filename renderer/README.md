@@ -73,6 +73,22 @@ part of the initial 2D/page bundle.
 `MeshPhysicalMaterialParameters`. The component ref exposes its canvas, mesh
 and `invalidate()` without any global state.
 
+## Environment map
+
+Reflective and transmissive materials (chrome, glass, honey and most other
+presets except wax and clay) light the mark with a studio HDR. By default it is
+drei's `studio` preset, fetched from a public CDN on first use. To avoid that
+third-party request, host the file yourself and pass its URL:
+
+```tsx
+<Metaball3D material="chrome" environmentUrl="/hdri/studio_small_03_1k.hdr" />
+```
+
+The preset file is Poly Haven's
+[Studio Small 03](https://polyhaven.com/a/studio_small_03) (CC0). If the
+environment cannot be loaded, the mark still renders, without reflections, and
+a warning is logged; the host page is never unmounted by a failed request.
+
 ## Peer dependencies
 
 The host application provides React, React DOM, Three.js,
