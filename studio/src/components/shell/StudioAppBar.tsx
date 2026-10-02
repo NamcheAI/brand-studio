@@ -1,17 +1,18 @@
-import { ChevronDownIcon } from 'lucide-react';
+import { ArrowUpRightIcon, ChevronDownIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 import { StudioHeaderLink } from '@/components/StudioHeaderLink';
 import { ThemeMenu } from '@/components/theme-menu';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
-import { BRAND, WORKSPACES, type WorkspaceId } from '@/lib/brand';
+import { BRAND, BRAND_RESOURCES, WORKSPACES, type WorkspaceId } from '@/lib/brand';
 import { cn } from '@/lib/utils';
 
 /**
@@ -81,6 +82,13 @@ export function StudioAppBar({
               </span>
             </DropdownMenuItem>
           ))}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            render={<a href={BRAND_RESOURCES.href} />}
+            className="justify-between no-underline hover:no-underline"
+          >
+            {BRAND_RESOURCES.label}
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -111,6 +119,23 @@ export function StudioAppBar({
       <div className="ml-auto flex shrink-0 items-center gap-1">
         {actions}
         {actions ? <Separator orientation="vertical" className="mx-1 h-5" /> : null}
+        {/* The quiet way back to the website's brand page, a plain link in
+            the ghost button style. It joins the bar from `md`, where the
+            workspace pills still fit beside the editor actions; phones reach
+            it from the workspace menu instead. */}
+        <a
+          href={BRAND_RESOURCES.href}
+          className={cn(
+            buttonVariants({ variant: 'ghost', size: 'sm' }),
+            'hidden text-muted-foreground hover:text-foreground md:inline-flex',
+          )}
+        >
+          <span className="sr-only">Brand resources on </span>
+          {/* The domain shows from `lg`; narrower bars keep the arrow only,
+              so the four workspace pills stay fully visible. */}
+          <span className="sr-only lg:not-sr-only">namche.ai</span>
+          <ArrowUpRightIcon data-icon="inline-end" aria-hidden="true" />
+        </a>
         <ThemeMenu />
       </div>
     </header>

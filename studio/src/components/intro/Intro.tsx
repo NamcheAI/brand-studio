@@ -1,10 +1,11 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import type { GenerateParams } from '@namche/metaball';
 
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { ThemeMenu } from '@/components/theme-menu';
 import { useTheme } from '@/hooks/use-theme';
-import { BRAND } from '../../lib/brand';
+import { BRAND, BRAND_RESOURCES } from '../../lib/brand';
+import { cn } from '../../lib/utils';
 import { DAY_THEME, NIGHT_THEME, SVG_SIZE, cellRect, type Theme } from '../../lib/model';
 import AppCredits from '../AppCredits';
 import { ArtFrame, GraphLayer, GrowingMark, NodeLayer, TracedMark } from './IntroArt';
@@ -209,6 +210,22 @@ export default function Intro() {
             <BrandLockup />
             <div className="ml-auto flex items-center gap-1">
               <ThemeMenu />
+              {/* The way back to the website's brand page: a plain link styled
+                  as one (a rendered Button would announce it as a button).
+                  Below `sm` the visible label shortens to the domain; the
+                  accessible name stays the full sentence. */}
+              <a
+                href={BRAND_RESOURCES.href}
+                className={cn(
+                  buttonVariants({ variant: 'link' }),
+                  'text-muted-foreground hover:text-foreground',
+                )}
+              >
+                <span>
+                  <span className="sr-only sm:not-sr-only">Brand resources on </span>
+                  namche.ai
+                </span>
+              </a>
               <Button
                 variant="link"
                 nativeButton={false}
@@ -406,6 +423,12 @@ export default function Intro() {
               className="font-mono text-[0.625rem] tracking-[0.14em] text-muted-foreground uppercase no-underline hover:text-foreground"
             >
               Built on the NAMCHE design system
+            </a>
+            <a
+              href={BRAND_RESOURCES.href}
+              className="font-mono text-[0.625rem] tracking-[0.14em] text-muted-foreground uppercase no-underline hover:text-foreground"
+            >
+              {BRAND_RESOURCES.label}
             </a>
           </div>
         </div>

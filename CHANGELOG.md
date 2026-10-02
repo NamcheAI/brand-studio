@@ -17,6 +17,9 @@
   reflective Organic materials work without drei's CDN. A 3D stage that fails
   to load now shows an inline message with Retry and, for Liquid, a switch to
   the Organic look, instead of blanking the app.
+- Link back to the brand resources on namche.ai (marks, downloads, typefaces,
+  usage rules) from the landing page header and its design-system line, and
+  from the Studio app bar (from `md`; phones find it in the workspace menu).
 
 ## `@namche/metaball` 2.0.0 — Unreleased
 
