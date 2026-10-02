@@ -26,6 +26,14 @@ test('the intro leads into the Studio', () => {
   assert.match(html, /Open the Studio/);
 });
 
+test('the intro links back to the brand resources on namche.ai, in the same tab', () => {
+  const links = html.match(/<a[^>]*href="https:\/\/namche\.ai\/brand"[^>]*>/g) ?? [];
+  // One in the header, one next to the design-system credit.
+  assert.equal(links.length, 2);
+  for (const link of links) assert.doesNotMatch(link, /target=/);
+  assert.match(html, /Brand resources on namche\.ai/);
+});
+
 test('the intro walks through the five steps that build the mark', () => {
   for (const caption of ['Nodes', 'Weight', 'Connection', 'Fusion', 'The mark']) {
     assert.match(html, new RegExp(`— ${caption}`));

@@ -9,6 +9,16 @@ export const BRAND = {
   full: 'NAMCHE Brand Studio',
 } as const;
 
+/**
+ * The return path to the brand page on the website: marks, downloads,
+ * typefaces and usage rules live there, the Studio draws. The Studio is
+ * English only, so it always links the English page; it opens in the same tab.
+ */
+export const BRAND_RESOURCES = {
+  href: 'https://namche.ai/brand',
+  label: 'Brand resources on namche.ai',
+} as const;
+
 export type WorkspaceId = 'mark' | 'object' | 'images' | 'library';
 
 export type Workspace = {

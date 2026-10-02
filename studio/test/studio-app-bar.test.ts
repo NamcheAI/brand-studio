@@ -30,3 +30,12 @@ test('StudioAppBar renders no active link when nothing is current', () => {
   const html = renderToStaticMarkup(createElement(StudioAppBar, { active: null }));
   assert.doesNotMatch(html, /aria-current="page"/);
 });
+
+test('StudioAppBar links back to the brand resources on namche.ai, in the same tab', () => {
+  const html = renderToStaticMarkup(createElement(StudioAppBar, { active: 'mark' }));
+  const link = html.match(/<a[^>]*href="https:\/\/namche\.ai\/brand"[^>]*>[\s\S]*?<\/a>/);
+  assert.ok(link, 'the app bar carries the brand resources link');
+  assert.doesNotMatch(link![0], /target=/);
+  // The accessible name is the full sentence, not only the visible domain.
+  assert.equal(link![0].replace(/<[^>]+>/g, ''), 'Brand resources on namche.ai');
+});
