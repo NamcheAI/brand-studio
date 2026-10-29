@@ -5,13 +5,17 @@ name: publish
 on:
   workflow_run:
     workflows: [CI]
+    branches: [main]
     types: [completed]
 
 # One group for the whole build -> release pipeline: two merges in quick
 # succession serialize rather than racing each other onto the host.
 concurrency:
-  group: deploy-release
+  # Only a successful same-repo main push may share the publication queue.
+  # Ineligible events cannot replace a queued main image build.
+  group: image-publish-${{ github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_repository.full_name == github.repository && github.event.workflow_run.conclusion == 'success' && 'main' || github.run_id }}
   cancel-in-progress: false
+  queue: max
 
 permissions: {}
 
@@ -31,6 +35,7 @@ jobs:
       github.event.workflow_run.conclusion == 'success' &&
       vars.DEPLOYS_ENABLED == '1'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
       packages: write
