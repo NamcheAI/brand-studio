@@ -18,8 +18,14 @@ jobs:
 
       - run: npm ci
 
+      - name: Verify main image channel ordering
+        run: node --test scripts/check-publish-workflow.test.mjs
+
       - name: Build engine and studio
         run: npm run build
+
+      - name: Typecheck studio
+        run: npm run typecheck -w @namche/brand-studio
 
       - name: Lint studio
         run: npm run lint

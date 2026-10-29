@@ -1,32 +1,7 @@
-name: deploy
+name: publish
 
-# Release pipeline for brand.namche.ai. After CI succeeds for a push to main,
-# and only when the DEPLOYS_ENABLED repository variable is `1`, this workflow
-# builds ghcr.io/namcheai/brand-studio and dispatches its immutable digest to
-# NamcheAI/infra's deploy-app.yml via INFRA_DISPATCH_TOKEN. Infra owns the
-# tailnet join, the host keys and the deploy credential.
-#
-# Same shape as NamcheAI/ui's deploy.yml, with the same deliberate
-# simplification: this app has no staging twin, so main goes straight to
-# production and there is no tag-promotion workflow.
-#
-# The Studio is public, with no login or authentication gate. Its paid
-# POST /api/render route uses a per-client-IP rate limit configured by
-# RENDER_MAX_PER_HOUR (default 10; `0` disables it). TRUST_PROXY=1 enables
-# trusted X-Forwarded-For handling when a trusted reverse proxy is in front.
-#
-# Default-branch-controlled: workflow_run always runs the base branch's
-# definition of this file, so a pull request cannot change what publishes or
-# where it deploys. ci.yml has already run typecheck, lint, tests and
-# `npm run build` against this exact sha from main, so the build job does
-# not re-run the suite; it publishes the resulting OCI image.
-#
-# Access model: this repo holds NO ssh key and NO tailnet access. Its only
-# deploy credential is INFRA_DISPATCH_TOKEN, a fine-grained PAT whose sole
-# power is triggering workflows on NamcheAI/infra (minted once for the estate
-# and delivered by foundation/). A compromise of this repo cannot reach a host;
-# at worst it can ask infra to deploy an image.
-
+# CI-passed main images are published for the VM's local release poller.
+# Runtime history, health, promotion and rollback remain host-owned.
 on:
   workflow_run:
     workflows: [CI]
@@ -59,8 +34,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-    outputs:
-      image: ${{ steps.image.outputs.image }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -87,69 +60,12 @@ jobs:
           push: true
           tags: |
             ${{ env.IMAGE }}:sha-${{ github.event.workflow_run.head_sha }}
-            ${{ env.IMAGE }}:main
           cache-from: type=registry,ref=${{ env.IMAGE }}/buildcache:main
           cache-to: type=registry,ref=${{ env.IMAGE }}/buildcache:main,mode=max
 
-      - name: Record immutable image reference
-        id: image
-        env:
-          DIGEST: ${{ steps.build.outputs.digest }}
-        run: |
-          if [[ ! "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]; then
-            echo "::error::Malformed digest from Buildx: ${DIGEST}"
-            exit 1
-          fi
-          echo "image=${IMAGE}@${DIGEST}" >> "$GITHUB_OUTPUT"
-
-  production:
-    needs: build
-    runs-on: ubuntu-latest
-    # The environment binding is what scopes INFRA_DISPATCH_TOKEN (and any
-    # required reviewers set on it) to a production release.
-    environment: production
-    permissions:
-      contents: read
-    env:
-      HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
-      IMAGE_REF: ${{ needs.build.outputs.image }}
-    steps:
-      # A superseded run must skip rather than roll production back to the
-      # older sha it happens to have finished building.
-      - name: Verify sha is still main HEAD
-        id: fresh
+      - name: Publish the main image channel if still current
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: ${{ github.repository }}
-        run: |
-          set -euo pipefail
-          CURRENT=$(gh api "repos/${REPO}/branches/main" --jq '.commit.sha')
-          if [ "$CURRENT" = "$HEAD_SHA" ]; then
-            echo "current=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "::notice::Superseded: main is at ${CURRENT}, this run built ${HEAD_SHA}. Skipping release."
-            echo "current=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      # Hand the digest to NamcheAI/infra. FIRE AND FORGET: a green step here
-      # means "infra accepted the request for this digest", NOT "the host is
-      # running it" -- the outcome lives in infra's Actions runs and in the
-      # estate's monitoring.
-      - name: Release to production (dispatch to infra)
-        if: steps.fresh.outputs.current == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.INFRA_DISPATCH_TOKEN }}
-        run: |
-          set -euo pipefail
-          if [ -z "${GH_TOKEN:-}" ]; then
-            echo "::error::INFRA_DISPATCH_TOKEN secret is empty -- cannot dispatch the release. Failing closed rather than reporting a deploy that never happened."
-            exit 1
-          fi
-          # --ref main is REQUIRED: without it `gh` resolves the target repo's
-          # default branch first, and that lookup needs `Contents: read`, which
-          # the dispatch PAT deliberately does not carry.
-          gh workflow run deploy-app.yml -R NamcheAI/infra --ref main \
-            -f app=brand-studio \
-            -f environment=production \
-            -f image="$IMAGE_REF"
-          echo "::notice::Dispatched production deploy of ${IMAGE_REF} to NamcheAI/infra. Outcome: https://github.com/NamcheAI/infra/actions/workflows/deploy-app.yml"
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: bash .github/scripts/publish-main-image.sh
