@@ -204,3 +204,17 @@ The Namche name and logos remain Namche trademarks. The MIT License does not
 grant trademark rights or permission to imply endorsement. The Studio
 application remains private and is not part of the public package license. The
 SIL Open Font License used by Namche Shadow applies to the fonts only.
+
+## Production image publication
+
+CI-passed main builds publish immutable SHA images, then advance
+`ghcr.io/namcheai/brand-studio:main` only if that source is still main HEAD.
+The VM polls the channel locally every minute. A healthy unchanged digest
+causes no restart; a new or unhealthy release goes through the existing
+candidate checks, history-volume preservation, promotion and rollback.
+Application CI has no infra dispatch token or host connection.
+
+Repository/package writers are trusted production publishers, including
+same-repository PR workflow code. Image publication is deployment authority;
+conditions and healthchecks do not provide an independent authenticity gate.
+See [the infra runbook](https://github.com/NamcheAI/infra/blob/main/docs/pull-deployments.md).
